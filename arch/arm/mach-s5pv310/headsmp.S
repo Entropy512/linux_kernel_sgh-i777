@@ -16,7 +16,7 @@
 #include <asm/assembler.h>
 #include <asm/memory.h>
 
-	__INIT
+	__CPUINIT
 
 /*
  * s5pv310 specific entry point for secondary CPUs.  This provides
