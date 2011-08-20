@@ -669,6 +669,9 @@ static ssize_t store_UV_mV_table(struct cpufreq_policy *policy,
       else
               for( i = 0; i < 7; i++ )
               {
+		if (exp_UV_mV[i] < 800) {
+			exp_UV_mV[i] = 800;
+		}
                  exp_UV_mV[i] *= 1000;
               }
               return count;
