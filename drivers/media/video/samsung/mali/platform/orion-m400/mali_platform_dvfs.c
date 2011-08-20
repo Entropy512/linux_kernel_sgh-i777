@@ -24,6 +24,10 @@
 
 #include <asm/io.h>
 
+#ifdef CONFIG_GPU_CLOCK_CONTROL
+extern int gpu_clock_control[2];
+#endif
+
 #ifdef CONFIG_S5PV310_ASV
 #include <mach/asv.h>
 #endif
@@ -136,12 +140,21 @@ static unsigned int get_mali_dvfs_staus(void)
         {
             if(mali_dvfs[stepIndex].vol ==voltage)
             {
+#ifdef CONFIG_GPU_CLOCK_CONTROL
+                if(gpu_clock_control[stepIndex] == clk_rate/mali_dvfs[stepIndex].freq)
+                {
+                    maliDvfsStatus.currentStep=stepIndex;
+                    maliDvfsStatus.pCurrentDvfs=&mali_dvfs[stepIndex];
+                    return maliDvfsStatus.currentStep;
+                }
+#else
                 if(mali_dvfs[stepIndex].clock == clk_rate/mali_dvfs[stepIndex].freq)
                 {
                     maliDvfsStatus.currentStep=stepIndex;
                     maliDvfsStatus.pCurrentDvfs=&mali_dvfs[stepIndex];
                     return maliDvfsStatus.currentStep;
                 }
+#endif
             }
         }
     }
@@ -153,8 +166,11 @@ static unsigned int get_mali_dvfs_staus(void)
     mali_regulator_set_voltage(mali_dvfs[MALI_DVFS_DEFAULT_STEP].vol, mali_dvfs[MALI_DVFS_DEFAULT_STEP].vol);
 #endif
     /*change the clock*/
+#ifdef CONFIG_GPU_CLOCK_CONTROL
+    mali_clk_set_rate(gpu_clock_control[MALI_DVFS_DEFAULT_STEP], mali_dvfs[MALI_DVFS_DEFAULT_STEP].freq);
+#else
     mali_clk_set_rate(mali_dvfs[MALI_DVFS_DEFAULT_STEP].clock, mali_dvfs[MALI_DVFS_DEFAULT_STEP].freq);
-
+#endif
 	mali_clk_put();
 	//clk_put(mali_parent_clock);
 	//clk_put(mpll_clock);
@@ -212,12 +228,20 @@ static mali_bool set_mali_dvfs_staus(u32 step,mali_bool boostup)
         mali_regulator_set_voltage(mali_dvfs[step].vol, mali_dvfs[step].vol);
 #endif
         /*change the clock*/
+#ifdef CONFIG_GPU_CLOCK_CONTROL
+        mali_clk_set_rate(gpu_clock_control[step], mali_dvfs[step].freq);
+#else
         mali_clk_set_rate(mali_dvfs[step].clock, mali_dvfs[step].freq);
+#endif
     }
     else
     {
         /*change the clock*/
+#ifdef CONFIG_GPU_CLOCK_CONTROL
+        mali_clk_set_rate(gpu_clock_control[step], mali_dvfs[step].freq);
+#else
         mali_clk_set_rate(mali_dvfs[step].clock, mali_dvfs[step].freq);
+#endif
 #ifdef CONFIG_REGULATOR
         /*change the voltage*/
         mali_regulator_set_voltage(mali_dvfs[step].vol, mali_dvfs[step].vol);
@@ -240,8 +264,11 @@ static mali_bool set_mali_dvfs_staus(u32 step,mali_bool boostup)
 
         clk_rate = mali_clk_get_rate();
         voltage = regulator_get_voltage(g3d_regulator);
-
+#ifdef CONFIG_GPU_CLOCK_CONTROL
+	if((mali_dvfs[step].vol== voltage)||(gpu_clock_control[step]== clk_rate/mali_dvfs[step].freq))
+#else
         if((mali_dvfs[step].vol== voltage)||(mali_dvfs[step].clock== clk_rate/mali_dvfs[step].freq))
+#endif
         {
             maliDvfsStatus.currentStep = validatedStep;
             /*for future use*/
@@ -258,8 +285,11 @@ static mali_bool set_mali_dvfs_staus(u32 step,mali_bool boostup)
     mali_regulator_set_voltage(mali_dvfs[MALI_DVFS_DEFAULT_STEP].vol, mali_dvfs[MALI_DVFS_DEFAULT_STEP].vol);
 #endif
     /*change the clock*/
+#ifdef CONFIG_GPU_CLOCK_CONTROL
+    mali_clk_set_rate(gpu_clock_control[MALI_DVFS_DEFAULT_STEP], mali_dvfs[MALI_DVFS_DEFAULT_STEP].freq);
+#else
     mali_clk_set_rate(mali_dvfs[MALI_DVFS_DEFAULT_STEP].clock, mali_dvfs[MALI_DVFS_DEFAULT_STEP].freq);
-
+#endif
     mali_clk_put();
     //clk_put(mali_parent_clock);
     //clk_put(mpll_clock);

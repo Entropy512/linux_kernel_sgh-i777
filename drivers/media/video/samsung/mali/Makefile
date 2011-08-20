@@ -262,6 +262,11 @@ mali-y += \
 	platform/orion-m400/mali_platform_dvfs.o
 endif
 
+ifeq ($(CONFIG_GPU_CLOCK_CONTROL),y)
+mali-y += \
+	common/gpu_clock_control.o
+endif
+
 ifeq ($(PANIC_ON_WATCHDOG_TIMEOUT),1)
 	EXTRA_CFLAGS += -DUSING_KERNEL_PANIC
 endif
