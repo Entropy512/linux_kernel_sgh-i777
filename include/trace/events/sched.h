@@ -380,6 +380,31 @@ TRACE_EVENT(sched_stat_runtime,
 			(unsigned long long)__entry->vruntime)
 );
 
+/*
+ * Tracepoint for average load.
+ */
+TRACE_EVENT(sched_load,
+
+	TP_PROTO(unsigned long nr_running, u64 avg_idle),
+
+	TP_ARGS(nr_running, avg_idle),
+
+	TP_STRUCT__entry(
+		__field(	int,		cpu)
+		__field(	unsigned long,	nr_running)
+		__field(	u64,		avg_idle)
+	),
+
+	TP_fast_assign(
+		__entry->cpu = smp_processor_id();
+		__entry->nr_running = nr_running;
+		__entry->avg_idle = avg_idle;
+	),
+
+	TP_printk("cpu=%d nr_running=%lu avg_idle=%llu",
+		  __entry->cpu, __entry->nr_running, __entry->avg_idle)
+);
+
 #endif /* _TRACE_SCHED_H */
 
 /* This part must be outside protection */
