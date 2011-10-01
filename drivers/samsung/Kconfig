@@ -1,0 +1,45 @@
+#
+#
+#
+
+menuconfig SAMSUNG_MODULES
+	tristate "Samsung Kernel Modules"
+	default m
+	help
+	  Say Y to enable Samsung kernel modules. j4fs and param
+	  modules are included.
+
+menuconfig J4FS
+	tristate "Samsung J4FS support"
+	depends on SAMSUNG_MODULES
+	default m
+	help
+	  Say Y to enable Samsung J4FS support.
+
+menuconfig FM_SI4709
+	tristate "Si4709 FM radio"
+	depends on SAMSUNG_MODULES
+	default m
+	help
+	  Say Y to enable Si4709 FM radio support.
+
+menuconfig VIBETONZ
+	tristate "Vibetonz"
+	depends on SAMSUNG_MODULES
+	default m
+	help
+	  Say Y to enable Vibetonz support.
+
+menuconfig STORAGE
+	tristate "Storage"
+	depends on SAMSUNG_MODULES && SAMSUNG_PHONE_SVNET
+	default m
+	help
+	  Say Y to enable DGS info support.
+
+menuconfig LEVEL
+	tristate "Level"
+	depends on SAMSUNG_MODULES && SAMSUNG_PHONE_SVNET
+	default m
+	help
+	  Say Y to enable Debug Level support.

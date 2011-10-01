@@ -1,0 +1,569 @@
+# arch/arm/mach-s5pv310/Kconfig
+#
+# Copyright (c) 2010 Samsung Electronics Co., Ltd.
+#		http://www.samsung.com/
+#
+# Licensed under GPLv2
+
+# Configuration options for the S5PV310
+
+if ARCH_S5PV310
+
+config CPU_S5PV310
+	bool
+	select PLAT_S5P
+	select S3C_PL330_DMA
+	select S5PV310_PM if PM
+	help
+	  Enable S5PV310 CPU support
+
+config CPU_S5PV310_EVT1
+	bool "S5PV310 EVT1"
+	help
+	  Enable S5PV310 EVT1 CPU support
+
+config USE_EXT_GIC
+	bool "Use external GIC and interrupt combiner"
+	depends on CPU_S5PV310_EVT1
+	help
+	  Use external GIC and interrupt combiner
+	  instead of internal GIC and interrupt combiner.
+
+config S5PV310_DEV_PD
+	bool
+	help
+	  Compile in platform device definitions for Power Domain
+
+config S5PV310_SETUP_I2C1
+	bool
+	help
+	  Common setup code for i2c bus 1.
+
+config S5PV310_SETUP_FB_S3C
+	bool
+	default y
+	help
+	  Setup code for S5PV310 FIMD
+
+config S5PV310_SETUP_FIMC0
+	bool
+	depends on VIDEO_FIMC
+	default y
+	help
+	  Common setup code for FIMC controller 0.
+
+config S5PV310_SETUP_FIMC1
+	bool
+	depends on VIDEO_FIMC
+	default y
+	help
+	  Common setup code for FIMC controller 1.
+
+config S5PV310_SETUP_FIMC2
+	bool
+	depends on VIDEO_FIMC
+	default y
+	help
+	  Common setup code for FIMC controller 2.
+
+config S5PV310_SETUP_FIMC3
+	bool
+	depends on VIDEO_FIMC
+	default y
+	help
+	  Common setup code for FIMC controller 3.
+
+config S5PV310_SETUP_CSIS
+	bool
+	depends on VIDEO_FIMC_MIPI
+	default y
+	help
+	  Common setup code for MIPI-CSIS
+
+config S5PV310_SETUP_I2C2
+	bool
+	help
+	  Common setup code for i2c bus 2.
+
+config S5PV310_SETUP_I2C3
+	bool
+	help
+	  Common setup code for i2c bus 3.
+
+config S5PV310_SETUP_I2C4
+	bool
+	help
+	  Common setup code for i2c bus 4.
+
+config S5PV310_SETUP_I2C5
+	bool
+	help
+	  Common setup code for i2c bus 5.
+
+config S5PV310_SETUP_I2C6
+	bool
+	help
+	  Common setup code for i2c bus 6.
+
+config S5PV310_SETUP_I2C7
+	bool
+	help
+	  Common setup code for i2c bus 7.
+
+config S5PV310_SETUP_SDHCI
+	bool
+	select S5PV310_SETUP_SDHCI_GPIO
+	help
+	  Internal helper functions for S5PV310 based SDHCI systems.
+
+config S5PV310_SETUP_SDHCI_GPIO
+	bool
+	help
+	  Common setup code for SDHCI gpio.
+
+config S5PV310_SETUP_MSHCI
+	bool
+	select S5PV310_SETUP_MSHCI_GPIO
+	help
+	  Internal helper functions for S5PV310 based MSHCI systems.
+
+config S5PV310_SETUP_MSHCI_GPIO
+	bool
+	help
+	  Common setup code for MSHCI gpio.
+
+config S5PV310_SETUP_USB_PHY
+	bool
+	depends on USB_SUPPORT
+	default y
+	help
+	  Common setup code for USB PHY.
+
+config S5PV310_PM
+	bool
+	help
+	  Power Management code common to S5PV310
+
+config SAMSUNG_IRQ_GPIO
+	bool
+	help
+	  Internal configuration to build the IRQ GPIO demux code.
+
+config S5PV310_DEV_PD
+	bool
+	help
+	  Platform device definitions for S5PV310 power domain
+
+config S5PV310_SETUP_TVOUT
+	bool
+	default y
+	help
+	Common setup code for TVOUT
+
+config S5PV310_DEV_TS
+        bool
+        help
+	    10.1inch size touchscreen for S5PV310
+
+config DEV_THERMAL
+    bool "Use Thermal management"
+    depends on CPU_S5PV310_EVT1
+    help
+      Use Thermal management driver for S5PV310 & S5PV210
+
+# machine support
+
+config MACH_SMDKC210
+	bool "SMDKC210"
+	select CPU_S5PV310
+	select ARCH_HAS_CPUFREQ
+	select ARCH_SPARSEMEM_ENABLE
+	select SAMSUNG_DEV_ADC
+	select SAMSUNG_DEV_TS
+	select S3C_DEV_WDT
+	select HAVE_S3C2410_WATCHDOG
+	select HAVE_PWM
+	select S3C_DEV_I2C1
+	select S3C_DEV_I2C2
+	select S3C_DEV_I2C3
+	select S3C_DEV_I2C4
+	select S3C_DEV_I2C5
+	select S3C_DEV_I2C6
+	select S3C_DEV_I2C7
+	select S5PV310_SETUP_I2C1
+	select S5PV310_SETUP_I2C2
+	select S5PV310_SETUP_I2C3
+	select S5PV310_SETUP_I2C4
+	select S5PV310_SETUP_I2C5
+	select S5PV310_SETUP_I2C6
+	select S5PV310_SETUP_I2C7
+	select S3C_DEV_HSMMC if !S5P_DEV_MSHC
+	select S3C_DEV_HSMMC2
+	select S5PV310_DEV_PD
+	select S5PV310_SETUP_SDHCI
+	select S3C_DEV_RTC
+	select S3C_DEV_GIB
+	select S5PV310_DEV_PD if PM_RUNTIME
+	help
+	  Machine support for Samsung SMDKC210
+	  S5PC210(MCP) is one of package option of S5PV310
+
+config MACH_SMDKV310
+	bool "SMDKV310"
+	select CPU_S5PV310
+	select ARCH_HAS_CPUFREQ
+	select ARCH_SPARSEMEM_ENABLE
+	select SAMSUNG_DEV_ADC
+	select SAMSUNG_DEV_TS
+	select S3C_DEV_WDT
+	select HAVE_S3C2410_WATCHDOG
+	select HAVE_PWM
+	select S3C_DEV_I2C1
+	select S3C_DEV_I2C2
+	select S3C_DEV_I2C3
+	select S3C_DEV_I2C4
+	select S3C_DEV_I2C5
+	select S3C_DEV_I2C6
+	select S3C_DEV_I2C7
+	select S5PV310_SETUP_I2C1
+	select S5PV310_SETUP_I2C2
+	select S5PV310_SETUP_I2C3
+	select S5PV310_SETUP_I2C4
+	select S5PV310_SETUP_I2C5
+	select S5PV310_SETUP_I2C6
+	select S5PV310_SETUP_I2C7
+	select S3C_DEV_HSMMC
+	select S3C_DEV_HSMMC2
+	select S5PV310_SETUP_SDHCI
+	select S3C_DEV_RTC
+	select S3C_DEV_GIB
+	select S5PV310_DEV_PD if PM_RUNTIME
+	help
+	  Machine support for Samsung SMDKV310
+
+config MACH_C1
+	bool "C1 board"
+	select CPU_S5PV310
+	select ARCH_HAS_CPUFREQ
+	select ARCH_SPARSEMEM_ENABLE
+	select SAMSUNG_DEV_ADC
+	select HAVE_PWM
+	select S3C_DEV_I2C1
+	select S3C_DEV_I2C3
+	select S3C_DEV_I2C5
+	select S3C_DEV_I2C6
+	select S3C_DEV_I2C7
+	select S5PV310_SETUP_I2C1
+	select S5PV310_SETUP_I2C3
+	select S5PV310_SETUP_I2C5
+	select S5PV310_SETUP_I2C6
+	select S5PV310_SETUP_I2C7
+	select S5P_DEV_MSHC if CPU_S5PV310_EVT1
+	select MMC_MSHC_CLOCK_GATING if CPU_S5PV310_EVT1
+	select MMC_CH2_CLOCK_GATING if CPU_S5PV310_EVT1
+	select S5PV310_MSHC_CH0_8BIT if CPU_S5PV310_EVT1
+	select S5PV310_MSHC_CH0_DDR if CPU_S5PV310_EVT1
+	select S3C_DEV_HSMMC if !S5P_DEV_MSHC
+	select S3C_DEV_HSMMC2
+	select S3C_DEV_HSMMC3
+	select S5PV310_SETUP_SDHCI
+	select S5PV310_SD_CH0_8BIT
+	select S5PV310_SETUP_MSHCI
+	select S3C_DEV_RTC
+	select S3C_DEV_GIB
+	select S5PV310_DEV_PD if PM_RUNTIME
+	select SAMSUNG_IRQ_GPIO
+	select SEC_DEV_JACK
+	help
+	  Machine support for TN C1 board
+
+choice
+	prompt "C1 board revision"
+	depends on MACH_C1
+	default MACH_C1_REV00PRE
+
+config MACH_C1_REV00PRE
+	bool "C1 REV00 Pre"
+
+config MACH_C1_REV01PRE
+	bool "C1 REV01 Pre"
+
+config MACH_C1_REV00
+	bool "C1 REV00"
+
+config MACH_C1_REV01
+	bool "C1 REV01"
+
+config MACH_C1_REV02
+	bool "C1 REV02 (EVT1)"
+
+config MACH_C1Q1_REV02
+	bool "Q1 REV02 (EVT1)"
+
+config MACH_Q1_REV00
+	bool "Q1 REV00 (EVT1)"
+	select S3C_DEV_I2C4
+	select S5PV310_SETUP_I2C4
+
+config MACH_Q1_REV02
+	bool "Q1 REV02 (EVT1)"
+	select S3C_DEV_I2C4
+	select S5PV310_SETUP_I2C4
+
+config MACH_TALBOT_REV02
+	bool "TALBOT REV02 (EVT1)"
+
+config MACH_C1_NA_SPR_REV02
+	bool "Gaudi REV02 (EVT1)"
+	select S3C_DEV_I2C2
+	select S3C_DEV_I2C4
+	select S5PV310_SETUP_I2C2
+	select S5PV310_SETUP_I2C4
+
+config MACH_C1_NA_SPR_REV05
+	bool "Gaudi REV05 (EVT1)"
+	select S3C_DEV_I2C2
+	select S3C_DEV_I2C4
+	select S5PV310_SETUP_I2C2
+	select S5PV310_SETUP_I2C4
+
+config MACH_C1_NA_SPR_EPIC2_REV00
+	bool "Epic2 REV00 (EVT1)"
+	select S3C_DEV_I2C2
+	select S3C_DEV_I2C4
+	select S5PV310_SETUP_I2C2
+	select S5PV310_SETUP_I2C4
+
+endchoice
+
+choice
+        prompt "TARGET_LOCALE"
+        default TARGET_LOCALE_EUR
+
+config TARGET_LOCALE_EUR
+        bool "EUR"
+        help
+          Support Europe Board
+
+config TARGET_LOCALE_KOR
+        bool "KOR"
+        help
+          Support Korea Board
+
+config TARGET_LOCALE_NTT
+	bool "JPN"
+        help
+          Support Japan Board
+
+config TARGET_LOCALE_NA
+        bool "NA"
+        help
+          Support North America Board
+
+config TARGET_LOCALE_NAATT
+        bool "NAGSM"
+        help
+          Support North America GSM ATT Board
+
+endchoice
+
+choice
+	prompt "LCD panel selection"
+	depends on MACH_C1
+	default PANEL_C1
+
+config PANEL_C1
+	bool "U1/C1 default panel"
+
+config PANEL_C1_NA_SPR
+	bool "D710 panel"
+
+config PANEL_EPIC2
+	bool "EPIC2 panel"
+
+endchoice
+
+comment "MMC/SD slot setup"
+	depends on PLAT_S5P
+
+menu "USE MSHC"
+	config S5P_DEV_MSHC
+	bool "MSHC"
+	depends on PLAT_S5P && !CPU_S5PV310_EVT1
+	default n
+	help
+		IF mshc(channel 4)  uses, channel 0 is disabled.
+endmenu
+
+menu "Use 8-bit bus width"
+	config S5PV310_SD_CH0_8BIT
+	bool "SDHC Channel 0"
+	depends on PLAT_S5P && !S5P_DEV_MSHC
+	default n
+	help
+		IF channel 0 uses 8-bit bus, channel 1 is disabled.
+
+config S5PV310_SD_CH2_8BIT
+	bool "SDHC Channel 2"
+	depends on PLAT_S5P
+	default n
+	help
+		IF channel 2 uses 8-bit bus, channel 3 is disabled.
+
+config S5PV310_MSHC_CH0_8BIT
+	bool "MSHC Channel 0"
+	depends on PLAT_S5P && S5P_DEV_MSHC
+	default n
+	help
+		IF channel 0 uses 8-bit bus, channel 1 is disabled.
+endmenu
+
+menu "Use DDR"
+	depends on PLAT_S5P && S5P_DEV_MSHC && (!S5PV310_MSHC_CH0_8BIT || CPU_S5PV310_EVT1)
+config S5PV310_MSHC_CH0_DDR
+	bool "Channel 0"
+	default n
+	help
+		IF channel 0 is working with DDR(Dual Data Rate) mode, can't use 8-bit bus.
+endmenu
+
+choice
+	prompt "Use Special PLL for MSHC"
+	depends on PLAT_S5P && S5P_DEV_MSHC && CPU_S5PV310_EVT1
+	help
+		This feature change MMC4OUT's clock source from MPLL to EPLL or VPLL
+	default S5PV310_MSHC_EPLL_45MHZ if CPU_S5PV310_EVT1
+
+config S5PV310_MSHC_MPLL_40MHZ
+	bool "MPLL"
+
+config S5PV310_MSHC_VPLL_46MHZ
+	bool "VPLL"
+
+config S5PV310_MSHC_EPLL_45MHZ
+	bool "EPLL"
+endchoice
+
+menu "Use dynamic clock gating"
+config MMC_CH0_CLOCK_GATING
+	bool "Channel 0"
+	depends on S3C_DEV_HSMMC
+	default n
+	help
+		This feature turns off clock of channel 0
+		for power saving when MMC/SD cards are not used.
+config MMC_CH1_CLOCK_GATING
+	bool "Channel 1"
+	depends on S3C_DEV_HSMMC1
+	default n
+	help
+		This feature turns off clock of channel 1
+		for power saving when MMC/SD cards are not used.
+config MMC_CH2_CLOCK_GATING
+	bool "Channel 2"
+	depends on S3C_DEV_HSMMC2
+	default n
+	help
+		This feature turns off clock of channel 2
+		for power saving when MMC/SD cards are not used.
+config MMC_CH3_CLOCK_GATING
+	bool "Channel 3"
+	depends on S3C_DEV_HSMMC3
+	default n
+	help
+		This feature turns off clock of channel 3
+		for power saving when MMC/SD cards are not used.
+config MMC_MSHC_CLOCK_GATING
+	bool "MSHC"
+	depends on S5P_DEV_MSHC
+	default n
+	help
+		This feature turns off clock of MSHC
+		for power saving when MMC/SD cards are not used.
+endmenu
+
+comment "Debugging Feature"
+menuconfig SEC_DEBUG
+	bool "Samsung TN Ramdump Feature"
+	depends on MACH_C1
+	default y
+	help
+	  Samsung TN Ramdump Feature. Use INFORM3 and magic number at 0xc0000000.
+
+if SEC_DEBUG
+config SEC_DEBUG_SCHED_LOG
+	bool "Samsung Scheduler Logging Feature"
+	default n
+	help
+	  Samsung Scheduler Logging Feature for Debug use.
+
+config SEC_DEBUG_SEMAPHORE_LOG
+	bool "Samsung Semaphore Logging Feature"
+	default n
+	help
+	  Samsung Semaphore Logging Feature for Debug use.
+
+config SEC_DEBUG_USER
+	bool "Panic on Userspace fault"
+	default y
+	help
+	  Panic on Userspace fault
+
+config SEC_DEBUG_PM_TEMP
+	bool "Temporary Logging for Sleep/Wakeup Issue"
+	default n
+	help
+	  Verbose Log on Sleep/Wakeup.
+
+config SEC_DEBUG_IRQ_EXIT_LOG
+	bool "Temporary Logging for IRQ delay"
+	default n
+	help
+	  Verbose Logging for IRQ delay.
+
+menuconfig S5PV310_WATCHDOG_RESET
+	bool "S5PV310 watchdog reset to exit from lockup"
+	depends on CPU_S5PV310
+	default n
+	help
+	  Use S5PV310 watchdog reset to exit from lockup
+
+endif
+
+menu "Support dynamic cpu hotplug (Experimental)"
+	depends on CPU_S5PV310 && HOTPLUG_CPU && SMP
+	config S5PV310_PM_HOTPLUG
+	bool "Dynamic hotplug"
+	default n
+	help
+	  Support dynamic cpu hotplug to reduce power consumption
+endmenu
+
+config S5PV310_ASV
+	bool "Enable ASV support"
+	default n
+	help
+		Say Y here to enable ASV(Adaptive Supply Voltage)
+
+menu "BUS Frequency and Voltage scaling (Experimental)"
+	depends on CPU_S5PV310
+	config S5PV310_BUSFREQ
+	bool "BUS DVFS"
+	default n
+	help
+	  Bus frequency and voltage scaling support.
+endmenu
+
+menu "CPUFreq step up sequence selection: 2 step or 3 step"
+config FREQ_STEP_UP_L2_L0
+	bool "Frequecy 2-step(default), 3-step(de-select)"
+	default n
+	help
+	 This option makes to select frequecy step up sequence betweeen 2-step and 3-step.
+	 2-step up as default raises to L2 level first, and L0 in seconde request.
+	 ("Frequecy 2-step up: Other->L2->L0 for CPU Freq)
+	 In case of 3-step up raises to L2, L1, and L0 level in order.
+	 ("Frequecy 3-step up: Other->L2->L1->L0 for CPU Freq")
+endmenu
+
+endif

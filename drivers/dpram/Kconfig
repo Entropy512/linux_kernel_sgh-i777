@@ -1,0 +1,22 @@
+#
+# IDPRAM configuration
+#
+
+menuconfig SAMSUNG_PHONE_TTY
+        tristate "Samsung Phone Interface - TTY"
+        default y
+        ---help---
+          By default, y
+          When in doubt, say N.
+
+if SAMSUNG_PHONE_TTY
+
+config  SAMSUNG_PHONE_TTY_RAFFAELLO
+        tristate "Select Samsung Phone Interface - TTY for Raffaello"
+        depends on SAMSUNG_PHONE_TTY
+
+config  SAMSUNG_PHONE_TTY_RAFFAELLO_RECOVERY
+        tristate "Select Samsung Phone Interface - TTY for Raffaello"
+        depends on SAMSUNG_PHONE_TTY
+
+endif # SAMSUNG_PHONE_TTY

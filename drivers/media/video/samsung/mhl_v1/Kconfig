@@ -1,0 +1,13 @@
+#
+# Copyright (c) 2010 Samsung Electronics Co., Ltd.
+# 		http://www.samsung.com/
+# Aakash Manik
+#	aakash.manik@samsung.com
+# Licensed under GPLv2
+
+config VIDEO_MHL_V1
+	bool "Samsung Mobile HD Link Interface"
+#	depends on VIDEO_SAMSUNG
+	default n
+	help
+	  This is a MHL v1 driver for Samsung S5PV210.

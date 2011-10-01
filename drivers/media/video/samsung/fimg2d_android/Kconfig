@@ -1,0 +1,20 @@
+# drivers/media/video/samsung/g2d/Kconfig
+#
+# Copyright (c) 2010 Samsung Electronics Co., Ltd.
+# 		http://www.samsung.com/
+#
+# Licensed under GPLv2
+
+config VIDEO_FIMG2D
+	bool "Samsung FIMG-2D Driver"
+	depends on VIDEO_SAMSUNG && (CPU_S5PV210 || CPU_S5PV310) && S5P_SYSMMU
+	default y
+	help
+	  This is a graphics 2D (FIMG2D) driver for Samsung S5PV310.
+
+config VIDEO_FIMG2D_DEBUG
+	bool "G2D Driver Debug Messages"
+	depends on VIDEO_FIMG2D
+	default n
+	help
+	  This enables G2D driver debug messages.

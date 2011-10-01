@@ -1,0 +1,37 @@
+#
+# GIB driver configuration
+#
+
+menuconfig GPS
+        tristate "GPS support"
+        depends on MACH_SMDK6450 || MACH_SMDKC210 || MACH_SMDKV310 || MACH_C1
+if GPS
+config GIB
+	bool "GIB support"
+
+config GIB_DEBUG
+	boolean "Debug support for GIB drivers"
+	depends on GIB && DEBUG_KERNEL
+	help
+	  Say "yes" to enable debug messaging (like dev_dbg and pr_debug),
+	  sysfs, and debugfs support in GIB controller and protocol drivers.
+
+#
+# MASTER side ... talking to discrete GIB slave chips including microcontrollers
+#
+config GIB_S5P64XX
+        tristate "S5P64XX GIB Driver"
+        depends on GIB && MACH_SMDK6450
+        help
+          Say Y here to include support for GIB controller in the
+          Samsung S5P6450 based System-on-Chip devices.
+
+
+config GIB_S5PV3XX
+        tristate "S5PV3XX GIB Driver"
+        depends on GIB && (MACH_SMDKV310 || MACH_SMDKC210 || MACH_C1)
+        help
+          Say Y here to include support for GIB controller in the
+          Samsung S5PV310 based System-on-Chip devices.
+
+endif

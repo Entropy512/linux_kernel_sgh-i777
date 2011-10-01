@@ -1,0 +1,109 @@
+# arch/arm/mach-s5p6450/Kconfig
+#
+# Copyright (c) 2009 Samsung Electronics Co., Ltd.
+#		http://www.samsung.com/
+#
+# Licensed under GPLv2
+
+if ARCH_S5P6450
+
+config CPU_S5P6450
+	bool
+	select S3C_PL330_DMA
+	select S3C_DEV_RTC
+	help
+	  Enable S5P6450 CPU support
+
+config MACH_SMDK6450
+	bool "SMDK6450"
+	select CPU_S5P6450
+	select S3C_DEV_MSHC
+	select S3C_DEV_HSMMC if !S5P6450_SD_CH1_8BIT
+	select S3C_DEV_HSMMC1
+	select S3C_DEV_HSMMC2 if !MMC_MSHCI
+	select S5P6450_SETUP_SDHCI
+	select S5P6450_SETUP_MSHCI
+	select SAMSUNG_DEV_ADC
+	select SAMSUNG_DEV_TS
+	select S3C_DEV_GIB
+	select S3C_DEV_WDT
+	select SAMSUNG_WAKEMASK
+	help
+	  Machine support for the Samsung SMDK6450
+
+config S5P6450_SETUP_FB_S3C
+	bool
+	default y
+	help
+	  Common setup code for S5P6450 with a LCD display helper
+
+config S5P6450_SETUP_SDHCI
+	bool
+	select S5P6450_SETUP_SDHCI_GPIO
+	help
+	  Internal helper functions for S5P6450 based SDHCI systems.
+
+config S5P6450_SETUP_SDHCI_GPIO
+	bool
+	help
+	  Common setup code for SDHCI gpio.
+
+config S5P6450_SETUP_MSHCI
+	bool
+	select S5P6450_SETUP_MSHCI_GPIO
+	help
+	  Internal helper functions for S5P6450 based MSHCI systems.
+
+config S5P6450_SETUP_MSHCI_GPIO
+	bool
+	help
+	  Common setup code for MSHCI gpio.
+
+
+config S5P6450_SETUP_I2C1
+	bool
+	default y
+	help
+	  Common setup code for i2c bus 1.
+
+config S5P6450_SETUP_FIMC0
+	bool
+	default y
+	help
+	  Common setup code for FIMC0 conntroller.
+
+config S5P6450_PWM
+    bool "S5P6450 PWM support"
+    select HAVE_PWM
+    help
+      Support for exporting the PWM timer blocks via the pwm device system.
+
+comment "MMC/SD slot setup"
+depends on PLAT_S5P
+
+menu "Use 8-bit bus width"
+config S5P6450_SD_CH1_8BIT
+bool "Channel 1"
+depends on PLAT_S5P
+default n
+help
+IF channel 1 uses 8-bit bus, channel 0 is disabled.
+
+config S5P6450_SD_CH3_8BIT
+bool "Channel 3"
+depends on (PLAT_S5P && MMC_MSHCI)
+default n
+help
+IF channel 3 uses 8-bit bus, channel 2 is disabled and can't use DDR mode.
+endmenu
+
+menu "Use DDR(Dual Data Rate)"
+config S5P6450_SD_CH3_DDR
+bool "Channel 3"
+depends on (PLAT_S5P && MMC_MSHCI)
+default n
+help
+IF channel 3 is working with DDR mode, can't use 8-bit bus.
+endmenu
+
+endif

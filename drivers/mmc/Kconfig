@@ -1,0 +1,56 @@
+#
+# MMC subsystem configuration
+#
+
+menuconfig MMC
+	tristate "MMC/SD/SDIO card support"
+	depends on HAS_IOMEM
+	help
+	  This selects MultiMediaCard, Secure Digital and Secure
+	  Digital I/O support.
+
+	  If you want MMC/SD/SDIO support, you should say Y here and
+	  also to your specific host controller driver.
+
+config MMC_DEBUG
+	bool "MMC debugging"
+	depends on MMC != n
+	help
+	  This is an option for use by developers; most people should
+	  say N here.  This enables MMC core and driver debugging.
+
+config MMC_DISCARD
+	bool "MMC discard support"
+	depends on MMC != n
+	help
+	  If you want MMC discard support, you should say Y here
+
+config MMC_DISCARD_MOVINAND
+	bool "MMC discard extra funtions depended on MoviNAND support"
+	depends on MMC_DISCARD != n
+	help
+	  If you want MMC discard support on MoviNAND, you should 
+	  say Y here to be optimize
+
+config MMC_DISCARD_MERGE
+	bool "MMC discard is merged (v2.0)"
+	depends on MMC_DISCARD != n
+	help
+	  If you want to merge blocks when discard is requested, you should 
+	  say Y here. Discard regions are merged by rb_tree.
+
+config MMC_DISCARD_DEBUG
+	bool "MMC discard debugging"
+	depends on MMC_DISCARD != n
+	help
+	  This is an option for use by developers; most people should
+	  say N here.  This enables MMC discard debugging.
+if MMC
+
+source "drivers/mmc/core/Kconfig"
+
+source "drivers/mmc/card/Kconfig"
+
+source "drivers/mmc/host/Kconfig"
+
+endif # MMC

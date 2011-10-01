@@ -1,0 +1,53 @@
+What:		/sys/kernel/mm/contiguous/
+Date:		August 2010
+Contact:	Michal Nazarewicz <m.nazarewicz@samsung.com>
+Description:
+		If CMA has been built with SysFS support,
+		/sys/kernel/mm/contiguous/ contains a file called
+		"map", a file called "allocators" and a directory
+		called "regions".
+
+		The "map" file lets one change the CMA's map attribute
+		at run-time.
+
+		The "allocators" file list all registered allocators.
+		Allocators with no name are listed as a single minus
+		sign.
+
+		The "regions" directory list all reserved regions.
+
+		For more details see
+		Documentation/contiguous-memory.txt.
+
+What:		/sys/kernel/mm/contiguous/regions/
+Date:		August 2010
+Contact:	Michal Nazarewicz <m.nazarewicz@samsung.com>
+Description:
+		The /sys/kernel/mm/contiguous/regions/ directory
+		contain directories for each registered CMA region.
+		The name of the directory is the same as the start
+		address of the region.
+
+		If region is named there is also a symbolic link named
+		like the region pointing to the region's directory.
+
+		Such directory contains the following files:
+
+		* "name"  -- the name of the region or an empty file
+		* "start" -- starting address of the region (formatted
+		            with %p, ie. hex).
+		* "size"  -- size of the region (in bytes).
+		* "free"  -- free space in the region (in bytes).
+		* "users" -- number of chunks allocated in the region.
+		* "alloc" -- name of the allocator.
+
+		If allocator is not attached to the region, "alloc" is
+		either the name of desired allocator in square
+		brackets (ie. "[foo]") or an empty file if region is
+		to be attached to default allocator.  If an allocator
+		is attached to the region. "alloc" is either its name
+		or "-" if attached allocator has no name.
+
+		If there are no chunks allocated in given region
+		("users" is "0") then a name of desired allocator can
+		be written to "alloc".

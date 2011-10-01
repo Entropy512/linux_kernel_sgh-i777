@@ -1,0 +1,3 @@
+config SND_SOC_MIC_A1026
+	bool "A1026 Voice Processor"
+	depends on SND_SOC && I2C && SND_SOC_MC1N2

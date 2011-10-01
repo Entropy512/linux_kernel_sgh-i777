@@ -1,0 +1,12 @@
+#
+#
+#
+
+menuconfig SAMSUNG_PHONE_SVNET
+	tristate "Samsung Phone Interface - SVN"
+	default n
+	---help---
+		I love you.
+
+#if SAMSUNG_PHONE_SVNET
+#endif # SAMSUNG_PHONE_SVNET
