@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.35.7
-# Sun Oct  2 18:20:47 2011
+# Sun Oct  2 22:36:11 2011
 #
 CONFIG_ARM=y
 CONFIG_HAVE_PWM=y
@@ -175,8 +175,11 @@ CONFIG_LBDAF=y
 CONFIG_IOSCHED_NOOP=y
 CONFIG_IOSCHED_DEADLINE=y
 CONFIG_IOSCHED_CFQ=y
+CONFIG_IOSCHED_BFQ=y
+# CONFIG_CGROUP_BFQIO is not set
 # CONFIG_DEFAULT_DEADLINE is not set
 CONFIG_DEFAULT_CFQ=y
+# CONFIG_DEFAULT_BFQ is not set
 # CONFIG_DEFAULT_NOOP is not set
 CONFIG_DEFAULT_IOSCHED="cfq"
 # CONFIG_INLINE_SPIN_TRYLOCK is not set
