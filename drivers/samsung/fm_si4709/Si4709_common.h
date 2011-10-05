@@ -6,7 +6,7 @@
 #include <linux/slab.h>
 #include <mach/gpio.h>
 
-/* #define Si4709_DEBUG */
+#define Si4709_DEBUG
 
 #define error(fmt, arg...) printk(KERN_CRIT fmt "\n", ##arg)
 
