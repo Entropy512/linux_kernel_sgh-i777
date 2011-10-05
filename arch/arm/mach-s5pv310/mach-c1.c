@@ -48,6 +48,7 @@
 #include <linux/android_pmem.h>
 #endif
 #include <linux/bootmem.h>
+#include <linux/bootmem.h>
 
 #include <asm/pmu.h>
 #include <asm/mach/arch.h>
@@ -7449,6 +7450,10 @@ static struct platform_device *smdkc210_devices_rev08[] __initdata = {
 	&s5p_device_tmu,
 #endif
 
+#ifdef CONFIG_ANDROID_RAM_CONSOLE
+	&ram_console_device,
+#endif
+
 #if defined(CONFIG_WIMAX_CMC) && defined(CONFIG_TARGET_LOCALE_NA)
 	&s3c_device_cmc732,
 #endif
@@ -7710,6 +7715,10 @@ static struct platform_device *smdkc210_devices[] __initdata = {
 	&s5p_device_tmu,
 #endif
 
+#ifdef CONFIG_ANDROID_RAM_CONSOLE
+	&ram_console_device,
+#endif
+
 #if defined(CONFIG_WIMAX_CMC) && defined(CONFIG_TARGET_LOCALE_NA)
 	&s3c_device_cmc732,
 #endif
@@ -7774,6 +7783,13 @@ static void __init smdkc210_map_io(void)
 	s5pv310_reserve();
 #elif defined(CONFIG_S5P_MEM_BOOTMEM)
 	s5p_reserve_bootmem();
+#endif
+#ifdef CONFIG_ANDROID_RAM_CONSOLE
+	if (!reserve_bootmem(0x5e900000, (1 << CONFIG_LOG_BUF_SHIFT), BOOTMEM_EXCLUSIVE)) {
+	  ram_console_resource[0].start = 0x5e900000;
+	  ram_console_resource[0].end = ram_console_resource[0].start + (1 << CONFIG_LOG_BUF_SHIFT) - 1;
+	  pr_err("%s ram_console_resource[0].start:i%p, end:%p\n", __func__, ram_console_resource[0].start, ram_console_resource[0].end);
+	}
 #endif
 	sec_getlog_supply_meminfo(meminfo.bank[0].size, meminfo.bank[0].start,
 				  meminfo.bank[1].size, meminfo.bank[1].start);
