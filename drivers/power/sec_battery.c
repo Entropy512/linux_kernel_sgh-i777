@@ -281,6 +281,7 @@ struct sec_bat_info {
 	unsigned int batt_temp_radc;
 #endif
 	unsigned int batt_current_adc;
+        unsigned int batt_chg_current;
 #if defined(CONFIG_TARGET_LOCALE_NAATT)
 	int batt_vf_adc;
 	int batt_event_status;
@@ -2014,6 +2015,7 @@ static struct device_attribute sec_battery_attrs[] = {
 	SEC_BATTERY_ATTR(batt_temp_adc_spec),
 	SEC_BATTERY_ATTR(batt_test_value),
 	SEC_BATTERY_ATTR(batt_current_adc),
+	SEC_BATTERY_ATTR(batt_chg_current),
 	SEC_BATTERY_ATTR(system_rev),
 #ifdef CONFIG_TARGET_LOCALE_NA
 	SEC_BATTERY_ATTR(fg_soc),
@@ -2065,6 +2067,7 @@ enum {
 	BATT_TEMP_ADC_SPEC,
 	BATT_TEST_VALUE,
 	BATT_CURRENT_ADC,
+	BATT_CHG_CURRENT,
 	BATT_SYSTEM_REV,
 	BATT_FG_PSOC,
 	BATT_LPM_STATE,
@@ -2248,6 +2251,11 @@ static ssize_t sec_bat_show_property(struct device *dev,
 	case BATT_CURRENT_ADC:
 		i += scnprintf(buf + i, PAGE_SIZE - i, "%d\n",
 			info->batt_current_adc);
+		break;
+	case BATT_CHG_CURRENT:
+                info->batt_chg_current = sec_bat_get_adc_data(info, ADC_CH_CHGCURRENT);
+		i += scnprintf(buf + i, PAGE_SIZE - i, "%d\n",
+			info->batt_chg_current);
 		break;
 	case BATT_SYSTEM_REV:
 		i += scnprintf(buf + i, PAGE_SIZE - i, "%d\n", system_rev);
@@ -2554,7 +2562,7 @@ static int sec_bat_read_proc(char *buf, char **start,
 
 #ifdef CONFIG_TARGET_LOCALE_NA
 
-	len = sprintf(buf, "%lu, %u, %u, %u, %u, %u, %d, %d, %d, \
+	len = sprintf(buf, "%lu, %u, %u, %u, %u, %u, %u, %d, %d, %d, \
 %u, %u, %u, %u, %u, %u, %u, %d, %lu\n",
 		cur_time.tv_sec,
 		info->batt_raw_soc,
@@ -2562,6 +2570,7 @@ static int sec_bat_read_proc(char *buf, char **start,
 		info->batt_vfocv,
 		info->batt_vcell,
 		info->batt_current_adc,
+		info->batt_chg_current,
 		info->batt_full_status,
 		info->charging_int_full_count,
 		info->charging_adc_full_count,
