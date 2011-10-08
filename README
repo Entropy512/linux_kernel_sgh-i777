@@ -1,3 +1,25 @@
+	HOW TO FORK AND BUILD
+
+1. Visit http://www.codesourcery.com/, download and install Sourcery G++ Lite 2009q3-68 toolchain for ARM EABI.
+
+2. Fork linux_kernel_sgh-i777 and initramfs_sgh-i777
+	http://help.github.com/fork-a-repo/
+
+3. Make sure that linux_kernel_sgh-i777 and initramfs_sgh-i777 directories are in the same directory, e.g. structure should look like:
+	working_dir/linux_kernel_sgh-i777
+	working_dir/initramfs_sgh-i777
+
+5. Export CROSS_COMPILE to point to your toolchain.  Example:
+	export CROSS_COMPILE=~/CodeSourcery/Sourcery_G++_Lite/bin/arm-none-eabi-
+
+6. Move into the top directory of the kernel source (linux_kernel_sgh-i777).
+
+7. Execute './build-linux-i777'.
+
+8. If the kernel is built successfully, you will find the following file:
+	linux_kernel_sgh-i777/arch/arm/boot/zImage
+
+
 	Linux kernel release 2.6.xx <http://kernel.org/>
 
 These are the release notes for Linux version 2.6.  Read them carefully,
