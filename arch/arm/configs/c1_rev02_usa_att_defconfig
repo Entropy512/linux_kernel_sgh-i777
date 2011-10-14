@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.35.7
-# Thu Oct 13 23:49:38 2011
+# Thu Oct 13 23:52:22 2011
 #
 CONFIG_ARM=y
 CONFIG_HAVE_PWM=y
@@ -65,7 +65,7 @@ CONFIG_TREE_RCU=y
 # CONFIG_RCU_TRACE is not set
 CONFIG_RCU_FANOUT=32
 # CONFIG_RCU_FANOUT_EXACT is not set
-# CONFIG_RCU_FAST_NO_HZ is not set
+CONFIG_RCU_FAST_NO_HZ=y
 # CONFIG_TREE_RCU_TRACE is not set
 CONFIG_IKCONFIG=y
 CONFIG_IKCONFIG_PROC=y
