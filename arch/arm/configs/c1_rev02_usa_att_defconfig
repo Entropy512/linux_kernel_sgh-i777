@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.35.7
-# Thu Oct 13 23:52:22 2011
+# Thu Oct 13 23:55:54 2011
 #
 CONFIG_ARM=y
 CONFIG_HAVE_PWM=y
@@ -557,7 +557,7 @@ CONFIG_UACCESS_WITH_MEMCPY=y
 #
 CONFIG_ZBOOT_ROM_TEXT=0
 CONFIG_ZBOOT_ROM_BSS=0
-CONFIG_CMDLINE="console=ttySAC2,115200 consoleblank=0"
+CONFIG_CMDLINE="console=ttySAC2,115200 consoleblank=0 ramconsole=524288@0x5e900000"
 # CONFIG_CMDLINE_FORCE is not set
 # CONFIG_XIP_KERNEL is not set
 # CONFIG_KEXEC is not set
