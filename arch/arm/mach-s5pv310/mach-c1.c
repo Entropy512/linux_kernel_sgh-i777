@@ -6212,6 +6212,8 @@ static struct platform_device ram_console_device = {
 	.resource = ram_console_resource,
 };
 
+// "Clean" but doesn't work with I777 bootloaders
+/*
 static void __init setup_ram_console_mem(char *str)
 {
 	unsigned size = memparse(str, &str);
@@ -6234,6 +6236,33 @@ static void __init setup_ram_console_mem(char *str)
 }
 
 __setup("ram_console=", setup_ram_console_mem);
+*/
+#endif
+
+
+/*
+ * The "old" I9100 way of doing things.  Hardcoding things is usually not the way to go
+ * but since we can't change the kernel boot parameters line, we have to do it this way
+ */
+
+#if defined(CONFIG_ANDROID_RAM_CONSOLE)
+#define RAM_CONSOLE_MEM_START  (0x5e900000)
+
+static void __init s5pv310_reserve_ram_console(void)
+{
+  if (reserve_bootmem(RAM_CONSOLE_MEM_START,
+      (1 << CONFIG_LOG_BUF_SHIFT), BOOTMEM_EXCLUSIVE))
+    return;
+  ram_console_resource[0].start = RAM_CONSOLE_MEM_START;
+  ram_console_resource[0].end = ram_console_resource[0].start +
+          (1 << CONFIG_LOG_BUF_SHIFT) - 1;
+  pr_info("%s ram_console memory start -> %#zx, end -> %#zx\n",
+      __func__,
+      ram_console_resource[0].start,
+      ram_console_resource[0].end);
+}
+#else
+static inline void s5pv310_reserve_ram_console(void) { }
 #endif
 
 #ifdef CONFIG_ANDROID_PMEM
@@ -7775,6 +7804,8 @@ static void __init smdkc210_map_io(void)
 #elif defined(CONFIG_S5P_MEM_BOOTMEM)
 	s5p_reserve_bootmem();
 #endif
+	s5pv310_reserve_ram_console();
+
 	sec_getlog_supply_meminfo(meminfo.bank[0].size, meminfo.bank[0].start,
 				  meminfo.bank[1].size, meminfo.bank[1].start);
 

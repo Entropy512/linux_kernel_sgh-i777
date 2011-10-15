@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.35.7
-# Fri Oct 14 00:24:55 2011
+# Fri Oct 14 20:07:57 2011
 #
 CONFIG_ARM=y
 CONFIG_HAVE_PWM=y
@@ -558,7 +558,7 @@ CONFIG_UACCESS_WITH_MEMCPY=y
 CONFIG_ZBOOT_ROM_TEXT=0
 CONFIG_ZBOOT_ROM_BSS=0
 CONFIG_CMDLINE="loglevel=4 console=ram sec_debug.enable=0 sec_debug.enable_user=0 c1_watchdog.sec_pet=5 sec_log=0x100000@0x5ea00000 ram_console=0x100000@0x5e900000 s3cfb.bootloaderfb=0x5ec00000 ld9040.get_lcdtype=0x2 consoleblank=0 lpj=3981312 vmalloc=144m"
-CONFIG_CMDLINE_FORCE=y
+# CONFIG_CMDLINE_FORCE is not set
 # CONFIG_XIP_KERNEL is not set
 # CONFIG_KEXEC is not set
 
