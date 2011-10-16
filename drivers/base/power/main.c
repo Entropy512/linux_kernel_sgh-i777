@@ -413,6 +413,7 @@ static void pm_dev_err(struct device *dev, pm_message_t state, char *info,
 static void dpm_show_time(ktime_t starttime, pm_message_t state, char *info)
 {
 	ktime_t calltime;
+	struct timeval boottime;
 	s64 usecs64;
 	int usecs;
 
@@ -422,9 +423,19 @@ static void dpm_show_time(ktime_t starttime, pm_message_t state, char *info)
 	usecs = usecs64;
 	if (usecs == 0)
 		usecs = 1;
-	pr_info("PM: %s%s%s of devices complete after %ld.%03ld msecs\n",
-		info ?: "", info ? " " : "", pm_verb(state.event),
-		usecs / USEC_PER_MSEC, usecs % USEC_PER_MSEC);
+	if(!info)
+	  {
+	    do_gettimeofday(&boottime);
+	    pr_info("PM: %s%s%s of devices complete after %ld.%03ld msecs at %ld.%ld\n",
+		    info ?: "", info ? " " : "", pm_verb(state.event),
+		    usecs / USEC_PER_MSEC, usecs % USEC_PER_MSEC,boottime.tv_sec,boottime.tv_usec);
+	  }
+	else
+	  {
+	    pr_info("PM: %s%s%s of devices complete after %ld.%03ld msecs\n",
+		    info ?: "", info ? " " : "", pm_verb(state.event),
+		    usecs / USEC_PER_MSEC, usecs % USEC_PER_MSEC);
+	  }
 }
 
 /*------------------------- Resume routines -------------------------*/
