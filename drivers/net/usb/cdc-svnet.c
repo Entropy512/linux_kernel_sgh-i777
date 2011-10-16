@@ -409,6 +409,7 @@ static ssize_t store_waketime(struct device *d,
 	if (r)
 		return count;
 
+	printk(KERN_DEBUG "%s: cdc-svnet wakelock timeout set to %lu msec\n",__func__,msec);
 	j = msecs_to_jiffies(msec);
 	_wake_lock_settime(svn, j);
 
@@ -585,8 +586,10 @@ static int usbsvn_write(struct net_device *dev, struct sipc4_tx_data *tx_data)
 		goto exit;
 	}
 	usb_mark_last_busy(svn->usbdev);
-	if (dev_id == SIPC4_RAW)
-		wake_lock_timeout_data(svn);
+	if (dev_id == SIPC4_RAW) {
+                printk(KERN_INFO "%s: obtaining wake_lock_timeout for svnet-dormancy\n", __func__);
+	        wake_lock_timeout_data(svn);
+	}
 
 exit:
 	return err;
@@ -805,8 +808,10 @@ static void rx_complete(struct urb *req)
 		}
 		svn->devdata[dev_id].rx_skb = rx_data.skb;
 
-		if (dev_id == SIPC4_RAW)
+		if (dev_id == SIPC4_RAW) {
+		        printk(KERN_INFO "%s: obtaining wake_lock_timeout for svnet-dormancy\n", __func__);
 			wake_lock_timeout_data(svn);
+		}
 
 		goto resubmit;
 
