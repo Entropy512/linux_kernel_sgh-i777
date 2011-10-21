@@ -46,6 +46,8 @@
 #include "mali_device_pause_resume.h"
 #include "mali_linux_pm.h"
 
+#include <../common/gpu_clock_control.h>
+
 #if MALI_POWER_MGMT_TEST_SUITE
 #ifdef CONFIG_PM
 #include "mali_linux_pm_testsuite.h"
@@ -749,6 +751,10 @@ int _mali_dev_platform_register(void)
 	set_mali_parent_power_domain(&mali_gpu_device);
 #endif
 
+#ifdef CONFIG_GPU_CLOCK_CONTROL
+	gpu_control_start();
+#endif
+	
 #ifdef CONFIG_PM_RUNTIME
 #ifndef CONFIG_HAS_EARLYSUSPEND
 #if MALI_PMM_RUNTIME_JOB_CONTROL_ON
