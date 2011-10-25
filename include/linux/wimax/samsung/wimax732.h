@@ -62,7 +62,6 @@ struct wimax_cfg{
                                                  * set if host has acknowledged
                                                  * card removal
                                                  */
-	u8		powerup_done;
 };
 
 struct wimax732_platform_data {

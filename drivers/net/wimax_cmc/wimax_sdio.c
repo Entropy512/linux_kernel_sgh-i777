@@ -26,7 +26,7 @@
 #include <linux/mmc/sdio_ids.h>
 #include <linux/mmc/sdio_func.h>
 #include <asm/byteorder.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include <linux/delay.h>
 #include <mach/gpio.h>
 #include <plat/gpio-cfg.h>
@@ -40,9 +40,8 @@
 
 #define UWBRBDEVMINOR	233
 #define SWMXGPIOMINOR	234
-#define WIMAX_BAT_SYSPATH \
-"/sys/devices/platform/sec-battery/power_supply/battery/wimax"
-struct net_adapter *g_adapter;
+#define WIMAX_BAT_SYSPATH "/sys/devices/platform/sec-battery/power_supply/battery/wimax"
+struct net_adapter *g_adapter = NULL;
 static u_char node_id[ETH_ALEN];
 /* use ethtool to change the level for any given device */
 static int msg_level = -1;
@@ -54,25 +53,28 @@ void s3c_bat_use_wimax(int onoff)
 {
 	struct file     *fp;
 	fp = klib_fopen(WIMAX_BAT_SYSPATH, O_RDWR, 0);
-
-	if (!fp)
-		dump_debug("open fail");
-	if (onoff)
-		klib_fwrite("1", 1, fp);
-	else
-		klib_fwrite("0", 1, fp);
+	
+	if(!fp)
+		dump_debug("open fail");		
+	if(onoff){	
+		klib_fwrite("1",1,fp);
+	}else{
+		klib_fwrite("0",1,fp);
+		
+	}
 	klib_fclose(fp);
 }
+
 EXPORT_SYMBOL(s3c_bat_use_wimax);
 
 
-static const struct file_operations swmx_fops = {
-owner:THIS_MODULE,
-open	:	swmxdev_open,
-release	:	swmxdev_release,
-ioctl	:	swmxdev_ioctl,
-read	:	swmxdev_read,
-write	:	swmxdev_write,
+static struct file_operations swmx_fops = {
+	owner:		THIS_MODULE,
+	open:		swmxdev_open,
+	release:	swmxdev_release,
+	ioctl:		swmxdev_ioctl,
+	read:		swmxdev_read,
+	write:		swmxdev_write,
 };
 
 static struct miscdevice swmxctl_dev = {
@@ -82,112 +84,113 @@ static struct miscdevice swmxctl_dev = {
 };
 
 /*
-   swmxctl functions
-   (power on/off and factory function test)
- */
+	swmxctl functions
+	(power on/off and factory function test)
+*/
 int swmxdev_open(struct inode *inode, struct file *file)
 {
 	struct wimax732_platform_data *pdata =
-		container_of(file->private_data,
-				struct wimax732_platform_data, swmxctl_dev);
-	file->private_data = pdata;
+                container_of(file->private_data,
+                                struct wimax732_platform_data, swmxctl_dev);
+        file->private_data = pdata;
 	dump_debug("Device open by %d", current->tgid);
 	return 0;
 }
 
-int swmxdev_release(struct inode *inode, struct file *file)
+int swmxdev_release (struct inode * inode, struct file * file)
 {
 	dump_debug("Device close by %d", current->tgid);
 	return 0;
 }
 
-int swmxdev_ioctl(struct inode *inode, struct file *file,
-			 u_int cmd, u_long arg)
+int swmxdev_ioctl (struct inode *inode, struct file *file, u_int cmd, u_long arg)
 {
 	int	ret = 0;
 	u_int	val = ((u_char *)arg)[0];
 
-	struct wimax732_platform_data *gpdata =
-		(struct wimax732_platform_data *)(file->private_data);
+	 struct wimax732_platform_data *gpdata =
+                (struct wimax732_platform_data *)(file->private_data);
 
-	dump_debug("CMD: %x, PID: %d", cmd, current->tgid);
+	dump_debug("CMD: %x, PID: %d",cmd, current->tgid);
 
 	switch (cmd) {
 	case CONTROL_IOCTL_WIMAX_POWER_CTL: {
-			dump_debug("CONTROL_IOCTL_WIMAX_POWER_CTL..");
-			if (val == 0)
-				ret = gpdata->power(0);
-				else
-				ret = gpdata->power(1);
-				break;
-			}
+		dump_debug("CONTROL_IOCTL_WIMAX_POWER_CTL..");
+		if (val == 0)
+			ret = gpdata->power(0);
+		else
+			ret = gpdata->power(1);
+		break;
+	}
 	case CONTROL_IOCTL_WIMAX_MODE_CHANGE: {
-			dump_debug("CONTROL_IOCTL_WIMAX_MODE_CHANGE"
-					" to %d..", val);
-			if ((val < 0) || (val > AUTH_MODE)) {
-				dump_debug("Wrong mode %d", val);
-				return 0;
-				}
-				gpdata->power(0);
-				gpdata->g_cfg->wimax_mode = val;
-				ret = gpdata->power(1);
-				break;
-			}
+		dump_debug("CONTROL_IOCTL_WIMAX_MODE_CHANGE to %d..", val);
+
+		if ((val < 0) || (val > AUTH_MODE)) {
+			dump_debug("Wrong mode %d", val);
+			return 0;
+		}
+
+		gpdata->power(0);
+                gpdata->g_cfg->wimax_mode = val;
+                ret = gpdata->power(1);
+
+		break;
+	}
 	case CONTROL_IOCTL_WIMAX_EEPROM_DOWNLOAD: {
-				dump_debug("CNT_IOCTL_WIMAX_EEPROM_DOWNLOAD");
-				gpdata->power(0);
-				eeprom_write_boot();
-				break;
-			}
+		dump_debug("CONTROL_IOCTL_WIMAX_EEPROM_DOWNLOAD");
+		gpdata->power(0);
+
+		eeprom_write_boot();
+		break;
+	}
 	case CONTROL_IOCTL_WIMAX_SLEEP_MODE: {
-			if (val == 0) {
-				dump_debug("AP SLEEP: WIMAX VI");
-				gpdata->g_cfg->sleep_mode = 0;
-			} else {
-				dump_debug("AP SLEEP: WIMAX IDLE");
-				gpdata->g_cfg->sleep_mode = 1;
-				}
-				break;
-			}
+		if (val == 0) {
+			dump_debug("AP SLEEP: WIMAX VI");
+			gpdata->g_cfg->sleep_mode = 0;
+		} else {
+			dump_debug("AP SLEEP: WIMAX IDLE");
+			gpdata->g_cfg->sleep_mode = 1;
+		}
+
+		break;
+	}
 	case CONTROL_IOCTL_WIMAX_WRITE_REV: {
-			dump_debug("CONTROL_IOCTL_WIMAX_WRITE_REV");
-			gpdata->power(0);
-			eeprom_write_rev();
-			break;
-			}
+		dump_debug("CONTROL_IOCTL_WIMAX_WRITE_REV");
+		gpdata->power(0);
+		eeprom_write_rev();
+		break;
+	}
 	case CONTROL_IOCTL_WIMAX_CHECK_CERT: {
-			dump_debug("CONTROL_IOCTL_WIMAX_CHECK_CERT");
-			gpdata->power(0);
-			ret = eeprom_check_cert();
-			break;
-			}
+		dump_debug("CONTROL_IOCTL_WIMAX_CHECK_CERT");
+		gpdata->power(0);
+		ret = eeprom_check_cert();
+		break;
+	}
 	case CONTROL_IOCTL_WIMAX_CHECK_CAL: {
-			dump_debug("CONTROL_IOCTL_WIMAX_CHECK_CAL");
-			gpdata->power(0);
-			ret = eeprom_check_cal();
-			break;
-			}
+		dump_debug("CONTROL_IOCTL_WIMAX_CHECK_CAL");
+		gpdata->power(0);
+		ret = eeprom_check_cal();
+		break;
+	}
 	}	/* switch (cmd) */
 
 	return ret;
 }
 
-ssize_t swmxdev_read(struct file *file, char *buf,
-			 size_t count, loff_t *ppos)
+ssize_t swmxdev_read (struct file * file, char * buf, size_t count, loff_t *ppos)
 {
 	return 0;
 }
 
-ssize_t swmxdev_write(struct file *file, const char *buf,
-			 size_t count, loff_t *ppos)
+ssize_t swmxdev_write (struct file *file, const char *buf, size_t count, loff_t *ppos)
 {
 	return 0;
 }
 
 /*
-   uwibro functions
-   (send and receive control packet with WiMAX modem)
- */
+	uwibro functions
+	(send and receive control packet with WiMAX modem)
+*/
 int uwbrdev_open(struct inode *inode, struct file *file)
 {
 	struct net_adapter		*adapter;
@@ -202,7 +205,7 @@ int uwbrdev_open(struct inode *inode, struct file *file)
 	adapter = (struct net_adapter *)(file->private_data);
 	dump_debug("open: tgid=%d", current->tgid);
 
-	if (adapter->mac_ready != TRUE || adapter->halted) {
+	if (adapter->ready != TRUE || adapter->halted ) {
 		dump_debug("Device not ready Retry..");
 		return -ENXIO;
 	}
@@ -213,9 +216,7 @@ int uwbrdev_open(struct inode *inode, struct file *file)
 		return -EEXIST;
 	} else {
 		/* init new process descriptor */
-		process = (struct process_descriptor *)
-				kmalloc(sizeof(struct process_descriptor),
-					 GFP_ATOMIC);
+		process = (struct process_descriptor *)kmalloc(sizeof(struct process_descriptor), GFP_ATOMIC);
 		if (process == NULL) {
 			dump_debug("uwbrdev_open: kmalloc fail!!");
 			return -ENOMEM;
@@ -225,8 +226,7 @@ int uwbrdev_open(struct inode *inode, struct file *file)
 			process->type = 0;
 			init_waitqueue_head(&process->read_wait);
 			spin_lock(&adapter->ctl.apps.lock);
-			queue_put_tail(adapter->ctl.apps.process_list,
-					 process->node);
+		 	queue_put_tail(adapter->ctl.apps.process_list, process->node);
 			spin_unlock(&adapter->ctl.apps.lock);
 		}
 	}
@@ -234,13 +234,13 @@ int uwbrdev_open(struct inode *inode, struct file *file)
 	return 0;
 }
 
-int uwbrdev_release(struct inode *inode, struct file *file)
+int uwbrdev_release (struct inode * inode, struct file * file)
 {
 	struct net_adapter		*adapter;
 	struct process_descriptor	*process;
 	int				current_tgid = 0;
 
-	dump_debug("release: tgid=%d, pid=%d", current->tgid, current->pid);
+	dump_debug("release: tgid=%d, pid=%d",current->tgid, current->pid);
 
 	adapter = (struct net_adapter *)(file->private_data);
 	if (adapter == NULL) {
@@ -276,13 +276,13 @@ int uwbrdev_release(struct inode *inode, struct file *file)
 	return 0;
 }
 
-static const struct file_operations uwbr_fops = {
-owner:THIS_MODULE,
-open	:	uwbrdev_open,
-release	:	uwbrdev_release,
-ioctl	:	uwbrdev_ioctl,
-read	:	uwbrdev_read,
-write	:	uwbrdev_write,
+static struct file_operations uwbr_fops = {
+	owner:		THIS_MODULE,
+	open:		uwbrdev_open,
+	release:	uwbrdev_release,
+	ioctl:		uwbrdev_ioctl,
+	read:		uwbrdev_read,
+	write:		uwbrdev_write,
 };
 
 static struct miscdevice uwibro_dev = {
@@ -314,48 +314,48 @@ int uwbrdev_ioctl(struct inode *inode, struct file *file, u_int cmd, u_long arg)
 
 	switch (cmd) {
 	case CONTROL_IOCTL_WRITE_REQUEST: {
-			struct eth_header *ctlhdr;
-			memset(&g_tx_buffer, 0x0,
-				 sizeof(struct control_tx_buffer));
-			if ((char *)arg == NULL) {
-				dump_debug("arg == NULL: return -EFAULT");
+		struct eth_header *ctlhdr;
+
+		memset(&g_tx_buffer, 0x0, sizeof(struct control_tx_buffer));
+
+		if ((char *)arg == NULL) {
+			dump_debug("arg == NULL: return -EFAULT");
+			return -EFAULT;
+		}
+
+		g_tx_buffer.length = ((struct control_tx_buffer *)arg)->length;
+
+		if (g_tx_buffer.length < WIMAX_MAX_TOTAL_SIZE) {
+			if (copy_from_user(g_tx_buffer.data,
+					(void *)(arg+sizeof(int)), g_tx_buffer.length))
 				return -EFAULT;
-			}
-			g_tx_buffer.length =
-				((struct control_tx_buffer *)arg)->length;
-			if (g_tx_buffer.length < WIMAX_MAX_TOTAL_SIZE) {
-				if (copy_from_user(g_tx_buffer.data,
-						 (void *)(arg+sizeof(int)),
-					 g_tx_buffer.length))
-					return -EFAULT;
-				} else
-					return -EFBIG;
-			spin_lock(&adapter->ctl.apps.lock);
-			process = process_by_id(adapter, current->tgid);
+		} else
+			return -EFBIG;
+
+		spin_lock(&adapter->ctl.apps.lock);
+		process = process_by_id(adapter, current->tgid);
 			if (process == NULL) {
-				dump_debug("process %d not found",\
-				 current->tgid);
-				ret = -EFAULT;
-				spin_unlock(&adapter->ctl.apps.lock);
-				break;
-			}
-			ctlhdr = (struct eth_header *)g_tx_buffer.data;
-			process->type = ctlhdr->type;
+			dump_debug("process %d not found", current->tgid);
+			ret = -EFAULT;
 			spin_unlock(&adapter->ctl.apps.lock);
-			control_send(adapter, g_tx_buffer.data,
-					 g_tx_buffer.length);
 			break;
-			}
+		}
+		ctlhdr = (struct eth_header *)g_tx_buffer.data;
+		process->type = ctlhdr->type;
+		spin_unlock(&adapter->ctl.apps.lock);
+
+		control_send(adapter, g_tx_buffer.data, g_tx_buffer.length);
+		break;
+	}
 	default:
-			dump_debug("uwbrdev_ioctl: "
-					"unknown ioctl cmd: 0x%x", cmd);
-			break;
+		dump_debug("uwbrdev_ioctl: unknown ioctl cmd: 0x%x", cmd);
+		break;
 	}	/* switch (cmd) */
 
 	return ret;
 }
 
-ssize_t uwbrdev_read(struct file *file, char *buf, size_t count, loff_t *ppos)
+ssize_t uwbrdev_read(struct file * file, char * buf, size_t count, loff_t *ppos)
 {
 	struct buffer_descriptor	*dsc;
 	struct net_adapter		*adapter;
@@ -375,39 +375,31 @@ ssize_t uwbrdev_read(struct file *file, char *buf, size_t count, loff_t *ppos)
 
 	process = process_by_id(adapter, current->tgid);
 	if (process == NULL) {
-		dump_debug("uwbrdev_read: "
-				"process %d not exist", current->tgid);
+		dump_debug("uwbrdev_read: process %d not exist",current->tgid);
 		return -ESRCH;
 	}
 
 	if (process->irp == FALSE) {
-		dsc = buffer_by_type(adapter->ctl.q_received.head,
-					 process->type);
+		dsc = buffer_by_type(adapter->ctl.q_received.head, process->type);
 		if (dsc == NULL) {
 			process->irp = TRUE;
 			if (wait_event_interruptible(process->read_wait,
-				((process->irp == FALSE) ||
-				 (adapter->halted == TRUE)))) {
+					((process->irp == FALSE) || (adapter->halted == TRUE)))) {
 				process->irp = FALSE;
-				adapter->pdata->g_cfg->temp_tgid =
-						 current->tgid;
+				adapter->pdata->g_cfg->temp_tgid = current->tgid;
 				return -ERESTARTSYS;
 			}
 			if (adapter->halted == TRUE) {
-				dump_debug("uwbrdev_read: "
-						"Card Removed "
-						"Indicated to Appln...");
+				dump_debug("uwbrdev_read: Card Removed Indicated to Appln...");
 				process->irp = FALSE;
-				adapter->pdata->g_cfg->temp_tgid =
-							 current->tgid;
+				adapter->pdata->g_cfg->temp_tgid = current->tgid;
 				return -ENODEV;
 			}
 		}
 
 		if (count == 1500) {	/* app passes read count as 1500 */
 			spin_lock(&adapter->ctl.apps.lock);
-			dsc = buffer_by_type(adapter->ctl.q_received.head,
-						 process->type);
+			dsc = buffer_by_type(adapter->ctl.q_received.head, process->type);
 			if (!dsc) {
 				dump_debug("uwbrdev_read: Fail...node is null");
 				spin_unlock(&adapter->ctl.apps.lock);
@@ -416,8 +408,7 @@ ssize_t uwbrdev_read(struct file *file, char *buf, size_t count, loff_t *ppos)
 			spin_unlock(&adapter->ctl.apps.lock);
 
 			if (copy_to_user(buf, dsc->buffer, dsc->length)) {
-				dump_debug("uwbrdev_read:copy_to_user failed"
-						"len=%lu !!", dsc->length);
+				dump_debug("uwbrdev_read: copy_to_user failed len=%lu !!", dsc->length);
 				return -EFAULT;
 			}
 
@@ -427,16 +418,14 @@ ssize_t uwbrdev_read(struct file *file, char *buf, size_t count, loff_t *ppos)
 			spin_unlock(&adapter->ctl.apps.lock);
 		}
 	} else {
-		dump_debug("uwbrdev_read: Read was sent twice "
-					"by process %d", current->tgid);
+		dump_debug("uwbrdev_read: Read was sent twice by process %d", current->tgid);
 		return -EEXIST;
 	}
 
 	return rlen;
 }
 
-ssize_t uwbrdev_write(struct file *file, const char *buf,
-			 size_t count, loff_t *ppos)
+ssize_t uwbrdev_write(struct file * file, const char * buf, size_t count, loff_t *ppos)
 {
 	return 0;
 }
@@ -467,7 +456,7 @@ static void create_char_name(u_char *str, u_long index)
 {
 	u_char	tempName[] = "uwbrdev";
 
-	sprintf(str, "%s%lu", tempName, index);
+	sprintf(str,"%s%lu", tempName,index);
 	return;
 }
 
@@ -484,10 +473,11 @@ static int netdev_ethtool_ioctl(struct net_device *dev, void *useraddr)
 		strncpy(info.driver, "C730USB", sizeof(info.driver) - 1);
 		if (copy_to_user(useraddr, &info, sizeof(info)))
 			return -EFAULT;
+
 		return 0;
-		}
+	}
 	default:
-			break;
+		break;
 	}
 
 	return -EOPNOTSUPP;
@@ -515,7 +505,7 @@ int adapter_start_xmit(struct sk_buff *skb, struct net_device *net)
 	}
 
 	len = ((skb->len) & 0x3f) ? skb->len : skb->len + 1;
-	hw_send_data(adapter, skb->data, len, DATA_PACKET);
+	hw_send_data(adapter, skb->data, len,DATA_PACKET);
 	dev_kfree_skb(skb);
 
 	if (adapter->media_state)
@@ -550,6 +540,7 @@ int adapter_open(struct net_device *net)
 		dump_debug("netif msg if up");
 
 	res = 0;
+	s3c_bat_use_wimax(1);
 	dump_debug("adapter driver open success!!!!!!!");
 
 	return res;
@@ -558,6 +549,7 @@ int adapter_open(struct net_device *net)
 int adapter_close(struct net_device *net)
 {
 	dump_debug("adapter driver close success!!!!!!!");
+	s3c_bat_use_wimax(0);
 	netif_stop_queue(net);
 	return 0;
 }
@@ -581,23 +573,25 @@ int adapter_ioctl(struct net_device *net, struct ifreq *rq, int cmd)
 	return 0;
 }
 
+int hw_device_wakeup(struct net_adapter *adapter);
 
 void adapter_sdio_rx_worker(struct work_struct *work)
 {
 	struct net_adapter              *adapter;
+	
 	struct net_device	*net;
 	int			err = 1;
 	u_int			len = 0;
 	u_int			remained_len = 0;
-	int			nReadIdx;
-	u32			t_len;
-	u32			t_index;
-	u32			t_size;
-	u8			*t_buff;
+	int 				nReadIdx;
+	 u32                                                     t_len;
+        u32                                                     t_index;
+        u32                                                     t_size;
+        u8                                                      *t_buff;
+
 
 	adapter = container_of(work, struct net_adapter, receive_work);
-
-	if (unlikely(!adapter)) {
+	if (unlikely(!adapter)){
 		dump_debug("adapter is point to NULL !!!!");
 		return;
 	}
@@ -611,14 +605,13 @@ void adapter_sdio_rx_worker(struct work_struct *work)
 	sdio_claim_host(adapter->func);
 	hwSdioReadBankIndex(adapter, &nReadIdx, &err);
 
-	if (err || (nReadIdx < 0)) {
-		dump_debug("%s :Invalid Read Index !!!", __func__);
+	if( err || (nReadIdx < 0) ) {
+ 		dump_debug("%s :Invalid Read Index !!!",__func__);
 		sdio_release_host(adapter->func);
 		return ;
 	}
 
-	hwSdioReadCounter(adapter, &len, &nReadIdx, &err);
-		/* read received byte */
+	hwSdioReadCounter(adapter, &len, &nReadIdx, &err); /* read received byte */
 
 	if (unlikely(err  || (!len))) {
 		dump_debug("!hwSdioReadCounter in adapter_sdio_rx_worker!");
@@ -636,44 +629,39 @@ void adapter_sdio_rx_worker(struct work_struct *work)
 
 	/* leave some space to copy the ethernet header */
 
-	t_len = len;
-	t_index = (SDIO_RX_BANK_ADDR + (SDIO_BANK_SIZE * nReadIdx) + 4);
-	t_buff = (u8 *)adapter->hw.receive_buffer +
-				 HEADER_MANIPULATION_OFFSET ;
+	   t_len = len;
+                t_index = (SDIO_RX_BANK_ADDR + (SDIO_BANK_SIZE * nReadIdx) + 4);
+                t_buff = (u8 *)adapter->hw.receive_buffer +  HEADER_MANIPULATION_OFFSET ;
 
-	while (t_len) {
-		t_size = (t_len > 512) ?
-			(512) : t_len;
-		err = sdio_memcpy_fromio(adapter->func, (void *)t_buff,
-				t_index, t_size);
-		t_len -= t_size;
-		t_buff += t_size;
-		t_index += t_size;
-	}
+                while (t_len) {
+                        t_size = (t_len > 512) ?
+                                (512) : t_len;
+                        err = sdio_memcpy_fromio(adapter->func, (void *)t_buff,
+                                        t_index, t_size);
+                        t_len -= t_size;
+                        t_buff += t_size;
+                        t_index += t_size;
+                }
 
 
 	if (unlikely(err  || (!len))) {
-		dump_debug("adapter_sdio_rx_worker :	\
+			dump_debug("adapter_sdio_rx_worker :	\
 				error in receiving packet!!drop	the	\
 				packet errt = %d, len = %d", err, len);
-		adapter->netstats.rx_errors++;
-
-	}
-
+			
+		}
+		
 	sdio_release_host(adapter->func);
 	/* leave some space to copy the ethernet header */
-	if (!err)
-		remained_len = process_sdio_data(adapter,
-				adapter->hw.receive_buffer +
-				HEADER_MANIPULATION_OFFSET, len, 0);
+	if(!err )	
+	remained_len = process_sdio_data(adapter, adapter->hw.receive_buffer + HEADER_MANIPULATION_OFFSET, len, 0);
 
 	if (unlikely(remained_len != 0))
-		dump_debug("Should we process for multi "
-				"packet, Remained len= %d", remained_len);
+		dump_debug("Should we process for multi packet, Remained length is = %d", remained_len);
 
 }
 
-void adapter_interrupt(struct sdio_func *func)
+ void adapter_interrupt(struct sdio_func *func)
 {
 	struct hw_private_packet	hdr;
 	struct net_adapter		*adapter = sdio_get_drvdata(func);
@@ -688,15 +676,16 @@ void adapter_interrupt(struct sdio_func *func)
 
 		sdio_writeb(func, intrd, SDIO_INT_STATUS_CLR_REG, NULL);
 		if (likely(intrd & SDIO_INT_DATA_READY)) {
-			queue_work(adapter->wimax_workqueue,
-				 &adapter->receive_work);
+			
+			queue_work(adapter->wimax_workqueue,&adapter->receive_work);
+
+
 		} else if (intrd & SDIO_INT_ERROR) {
 			adapter->netstats.rx_errors++;
-			dump_debug(" adapter_interrupt"
-				"SDIO_INT_ERROR occurred!!");
+			dump_debug(" adapter_interrupt intrd = SDIO_INT_ERROR occurred!!");
 		}
 	} else {
-		dump_debug("adapter halted in adapter_interrupt !!!!!!!!!");
+		dump_debug("adapter->halted=TRUE in adapter_interrupt !!!!!!!!!");
 
 		/* send stop message */
 		hdr.id0	 = 'W';
@@ -704,11 +693,9 @@ void adapter_interrupt(struct sdio_func *func)
 		hdr.code  = HwCodeHaltedIndication;
 		hdr.value = 0;
 
-		err = sd_send(adapter, (unsigned char *)&hdr,
-				 sizeof(struct hw_private_packet));
+		err = sd_send(adapter, (unsigned char*)&hdr, sizeof(struct hw_private_packet));
 		if (err < 0) {
-			dump_debug("adapter halted and send"
-				" HaltIndication to FW err = (%d) !!", err);
+			dump_debug("adapter->halted=TRUE and send HaltIndication to FW err = (%d) !!", err);
 			return;
 		}
 	}
@@ -727,18 +714,17 @@ int adapter_probe(struct sdio_func *func, const struct sdio_device_id *id)
 
 	net = alloc_etherdev(sizeof(struct net_adapter));
 	if (!net) {
-		dump_debug("adapter_probe: "
-				"error can't allocate device");
+		dump_debug("adapter_probe: error can't allocate device");
 		goto alloceth_fail;
 	}
 
 	adapter = netdev_priv(net);
 	memset(adapter, 0, sizeof(struct net_adapter));
 	g_adapter = adapter;
-
+	
 	adapter->pdata = (struct wimax732_platform_data *) id->driver_data;
-	adapter->pdata->g_cfg->card_removed = false;
-	adapter->pdata->g_cfg->powerup_done = false;
+        adapter->pdata->g_cfg->card_removed = false;
+
 
 	/* Initialize control */
 	control_init(adapter);
@@ -746,9 +732,8 @@ int adapter_probe(struct sdio_func *func, const struct sdio_device_id *id)
 	/* initialize hardware */
 	nRes = hw_init(adapter);
 
-	if (nRes) {
-		dump_debug("adapter_probe: error can't"
-				"allocate receive buffer");
+	if (nRes ) {
+		dump_debug("adapter_probe: error can't allocate receive buffer");
 		goto hwInit_fail;
 	}
 
@@ -760,7 +745,7 @@ int adapter_probe(struct sdio_func *func, const struct sdio_device_id *id)
 	net->watchdog_timeo = ADAPTER_TIMEOUT;
 	net->mtu = WIMAX_MTU_SIZE;
 	adapter->msg_enable = netif_msg_init(msg_level, NETIF_MSG_DRV
-			| NETIF_MSG_PROBE | NETIF_MSG_LINK);
+					| NETIF_MSG_PROBE | NETIF_MSG_LINK);
 
 	ether_setup(net);
 	net->flags |= IFF_NOARP;
@@ -784,7 +769,7 @@ int adapter_probe(struct sdio_func *func, const struct sdio_device_id *id)
 	sdio_claim_host(adapter->func);
 	nRes = sdio_enable_func(adapter->func);
 	if (nRes < 0) {
-		dump_debug("sdio_enable func error = %d", nRes);
+		dump_debug("sdio_enable func error = %d",nRes);
 		goto sdioen_fail;
 	}
 
@@ -802,16 +787,16 @@ int adapter_probe(struct sdio_func *func, const struct sdio_device_id *id)
 		dump_debug("adapter_probe: misc_register() failed");
 		goto regchar_fail;
 	}
-
+	
 	/* Dummy value for "ifconfig up" for 2.6.24 */
 	random_ether_addr(node_id);
 	memcpy(net->dev_addr, node_id, sizeof(node_id));
-
+	
 	mutex_init(&adapter->rx_lock);
 	INIT_WORK(&adapter->receive_work, adapter_sdio_rx_worker);
 	INIT_WORK(&adapter->transmit_work, hw_transmit_thread);
 	adapter->wimax_workqueue = create_workqueue("wimax_queue");
-
+	
 	if (hw_start(adapter)) {
 		/* Free the resources and stop the driver processing */
 		misc_deregister(&uwibro_dev);
@@ -819,7 +804,7 @@ int adapter_probe(struct sdio_func *func, const struct sdio_device_id *id)
 		goto regchar_fail;
 	}
 
-
+		
 	adapter->ready = TRUE;
 
 
@@ -841,8 +826,7 @@ hwInit_fail:
 	free_netdev(net);
 alloceth_fail:
 	adapter->pdata->g_cfg->card_removed = true;
-	adapter->pdata->g_cfg->powerup_done = true;
-	adapter->pdata->power(0);
+        adapter->pdata->power(0);
 	return nRes;
 }
 
@@ -856,14 +840,10 @@ void adapter_remove(struct sdio_func *func)
 	}
 
 	adapter->ready = FALSE;
-	adapter->pdata->g_cfg->card_removed = TRUE;
-
 	if (adapter->media_state == MEDIA_CONNECTED) {
 		netif_stop_queue(adapter->net);
 		adapter->media_state = MEDIA_DISCONNECTED;
 	}
-
-
 
 	/* remove adapter from adapters array */
 	g_adapter = NULL;
@@ -890,7 +870,8 @@ void adapter_remove(struct sdio_func *func)
 	free_netdev(adapter->net);
 	/*Distroy wimax worker */
 	destroy_workqueue(adapter->wimax_workqueue);
-
+	
+	adapter->pdata->g_cfg->card_removed = TRUE;
 
 	return;
 }
@@ -898,210 +879,206 @@ void adapter_remove(struct sdio_func *func)
 
 
 static ssize_t eeprom_show(struct device *dev,
-		struct device_attribute *attr, char *buf)
+                        struct device_attribute *attr, char *buf)
 {
 	dump_debug("Write EEPROM!!");
 
-	eeprom_write_boot();
-	eeprom_write_rev();
+        eeprom_write_boot();
+        eeprom_write_rev();
 
 
 }
-
+ 
 static ssize_t eeprom_store(struct device *dev,
-		struct device_attribute *attr,
-		const char *buffer, size_t count)
+                                        struct device_attribute *attr,
+                                        const char *buffer, size_t count)
 {
 	struct wimax732_platform_data   *pdata = dev_get_drvdata(dev);
 
 	if (count != 5)
-		return count;
+                return count;
 
-	if (strncmp(buffer, "wb00", 4) == 0) {
-		dump_debug("Write EEPROM!!");
-		eeprom_write_boot();
-	} else if (strncmp(buffer, "rb00", 4) == 0) {
-		dump_debug("Read Boot!!");
-		eeprom_read_boot();
-	} else if (strncmp(buffer, "re00", 4) == 0) {
-		dump_debug("Read EEPROM!!");
-		eeprom_read_all();
-	} else if (strncmp(buffer, "ee00", 4) == 0) {
-		dump_debug("Erase EEPROM!!");
-		eeprom_erase_all();
-	} else if (strncmp(buffer, "rcal", 4) == 0) {
-		dump_debug("Check Cal!!");
-		eeprom_check_cal();
-	} else if (strncmp(buffer, "ecer", 4) == 0) {
-		dump_debug("Erase Cert!!");
-		eeprom_erase_cert();
-	} else if (strncmp(buffer, "rcer", 4) == 0) {
-		dump_debug("Check Cert!!");
-		eeprom_check_cert();
-	} else if (strncmp(buffer, "wrev", 4) == 0) {
-		dump_debug("Write Rev!!");
-		eeprom_write_rev();
-	} else if (strncmp(buffer, "ons0", 4) == 0) {
-		dump_debug("Power On - SDIO MODE!!");
+        if (strncmp(buffer, "wb00", 4) == 0) {
+                dump_debug("Write EEPROM!!");
+                eeprom_write_boot();
+        } else if (strncmp(buffer, "rb00", 4) == 0) {
+                dump_debug("Read Boot!!");
+                eeprom_read_boot();
+        } else if (strncmp(buffer, "re00", 4) == 0) {
+                dump_debug("Read EEPROM!!");
+                eeprom_read_all();
+        } else if (strncmp(buffer, "ee00", 4) == 0) {
+                dump_debug("Erase EEPROM!!");
+                eeprom_erase_all();
+        } else if (strncmp(buffer, "rcal", 4) == 0) {
+                dump_debug("Check Cal!!");
+                eeprom_check_cal();
+        } else if (strncmp(buffer, "ecer", 4) == 0) {
+                dump_debug("Erase Cert!!");
+                eeprom_erase_cert();
+        } else if (strncmp(buffer, "rcer", 4) == 0) {
+                dump_debug("Check Cert!!");
+                eeprom_check_cert();
+        } else if (strncmp(buffer, "wrev", 4) == 0) {
+                dump_debug("Write Rev!!");
+	          eeprom_write_rev();
+        } else if (strncmp(buffer, "ons0", 4) == 0) {
+                dump_debug("Power On - SDIO MODE!!");
 		pdata->power(0);
 		pdata->g_cfg->wimax_mode = SDIO_MODE ;
-		pdata->power(1);
-	} else if (strncmp(buffer, "off0", 4) == 0) {
-		dump_debug("Power Off!!");
+		 pdata->power(1);
+        } else if (strncmp(buffer, "off0", 4) == 0) {
+                dump_debug("Power Off!!");
 		pdata->power(0);
-	} else if (strncmp(buffer, "wu00", 4) == 0) {
-		dump_debug("WiMAX UART!!");
-		pdata->uart_wimax();
-	} else if (strncmp(buffer, "au00", 4) == 0) {
-		dump_debug("AP UART!!");
-		pdata->uart_ap();
-	} else if (strncmp(buffer, "don0", 4) == 0) {
-		dump_debug("Enable Dump!!");
-		pdata->g_cfg->enable_dump_msg = 1;
-	} else if (strncmp(buffer, "doff", 4) == 0) {
-		dump_debug("Disable Dump!!");
-		pdata->g_cfg->enable_dump_msg = 0;
-	} else if (strncmp(buffer, "gpio", 4) == 0) {
-		dump_debug("Display GPIOs!!");
-		pdata->gpio_display();
-	} else if (strncmp(buffer, "wake", 4) == 0) {
-		dump_debug("WIMAX_WAKEUP!!");
-		pdata->wakeup_assert(1);
-		msleep(10);
-		pdata->wakeup_assert(0);
-	}
+        } else if (strncmp(buffer, "wu00", 4) == 0) {
+                dump_debug("WiMAX UART!!");
+                pdata->uart_wimax();
+        } else if (strncmp(buffer, "au00", 4) == 0) {
+                dump_debug("AP UART!!");
+                pdata->uart_ap();
+        } else if (strncmp(buffer, "don0", 4) == 0) {
+                dump_debug("Enable Dump!!");
+                pdata->g_cfg->enable_dump_msg = 1;
+        } else if (strncmp(buffer, "doff", 4) == 0) {
+                dump_debug("Disable Dump!!");
+                pdata->g_cfg->enable_dump_msg = 0;
+        } else if (strncmp(buffer, "gpio", 4) == 0) {
+                dump_debug("Display GPIOs!!");	
+		 pdata->gpio_display();
+        } else if (strncmp(buffer, "wake", 4) == 0) {
+                dump_debug("WIMAX_WAKEUP!!");
+		pdata->wakeup_assert(1); 
+                msleep(10);
+		pdata->wakeup_assert(0); 
+        }
 
-	return count - 1;
+        return count - 1;
 
 
 }
 
 static ssize_t onoff_show(struct device *dev,
-		struct device_attribute *attr, char *buf)
+                        struct device_attribute *attr, char *buf)
 {
 	struct wimax732_platform_data   *pdata = dev_get_drvdata(dev);
-
+	
 	pdata->power(0);
 	return 0;
 }
 
 static ssize_t onoff_store(struct device *dev,
-		struct device_attribute *attr,
-		const char *buffer, size_t count)
+                                        struct device_attribute *attr,
+                                        const char *buffer, size_t count)
 {
-	struct wimax732_platform_data   *pdata = dev_get_drvdata(dev);
+        struct wimax732_platform_data   *pdata = dev_get_drvdata(dev);
 
-	if (buffer[0] == 's') {
-		if (pdata->g_cfg->wimax_mode != SDIO_MODE ||
-			 gpio_get_value(WIMAX_EN) == 0) {
-			pdata->g_cfg->wimax_mode = SDIO_MODE;
+	 if (buffer[0] == 's') {
+                if (pdata->g_cfg->wimax_mode != SDIO_MODE || gpio_get_value(WIMAX_EN) == 0) {
+                        pdata->g_cfg->wimax_mode = SDIO_MODE;
 			pdata->power(1);
-		}
-	} else if (buffer[0] == 'w') {
-		if (pdata->g_cfg->wimax_mode != WTM_MODE ||
-			 gpio_get_value(WIMAX_EN) == 0) {
-			pdata->g_cfg->wimax_mode = WTM_MODE;
+                }
+        } else if (buffer[0] == 'w') {
+                if (pdata->g_cfg->wimax_mode != WTM_MODE || gpio_get_value(WIMAX_EN) == 0) {
+                        pdata->g_cfg->wimax_mode = WTM_MODE;	
 			pdata->power(1);
-		}
-	} else if (buffer[0] == 'u') {
-		if (pdata->g_cfg->wimax_mode != USB_MODE ||
-			 gpio_get_value(WIMAX_EN) == 0) {
-			pdata->g_cfg->wimax_mode = USB_MODE;
+                }
+        } else if (buffer[0] == 'u') {
+                if (pdata->g_cfg->wimax_mode != USB_MODE || gpio_get_value(WIMAX_EN) == 0) {
+                        pdata->g_cfg->wimax_mode = USB_MODE;
 			pdata->power(1);
-		}
-	} else if (buffer[0] == 'a') {
-		if (pdata->g_cfg->wimax_mode != AUTH_MODE ||
-			 gpio_get_value(WIMAX_EN) == 0) {
-			pdata->g_cfg->wimax_mode = AUTH_MODE;
+                }
+        } else if (buffer[0] == 'a') {
+                if (pdata->g_cfg->wimax_mode != AUTH_MODE || gpio_get_value(WIMAX_EN) == 0) {
+                        pdata->g_cfg->wimax_mode = AUTH_MODE;
 			pdata->power(1);
-		}
-	}
+                }
+        }
 
-	return count - 1;
+        return count - 1;
 
 
 }
 
 static ssize_t wmxuart_show(struct device *dev,
-		struct device_attribute *attr, char *buf)
+                        struct device_attribute *attr, char *buf)
 {
-	struct wimax732_platform_data   *pdata = dev_get_drvdata(dev);
+        struct wimax732_platform_data   *pdata = dev_get_drvdata(dev);
+	
+	 pdata->gpio_display();
 
-	pdata->gpio_display();
-
-	return 0;
+        return 0;
 
 }
 static ssize_t wmxuart_store(struct device *dev,
-		struct device_attribute *attr,
-		const char *buffer, size_t count)
+                                        struct device_attribute *attr,
+                                        const char *buffer, size_t count)
 {
-	struct wimax732_platform_data   *pdata = dev_get_drvdata(dev);
+        struct wimax732_platform_data   *pdata = dev_get_drvdata(dev);
 
-	if (buffer == NULL)
-		return 0;
+	 if (buffer == NULL)
+                return 0;
 
-	if (buffer[0] == '0')
-		pdata->uart_ap();
-	else if (buffer[0] == '1')
-		pdata->uart_wimax();
+        if (buffer[0] == '0')
+                pdata->uart_ap();
+        else if (buffer[0] == '1')
+                pdata->uart_wimax();
 
-	return count - 1;
+        return count - 1;
 
 
 }
 
 static ssize_t dump_show(struct device *dev,
-		struct device_attribute *attr, char *buf)
+                        struct device_attribute *attr, char *buf)
 {
-	struct wimax732_platform_data   *pdata = dev_get_drvdata(dev);
+        struct wimax732_platform_data   *pdata = dev_get_drvdata(dev);
 	pdata->power(0);
-	eeprom_check_cal();
+        eeprom_check_cal();
 
-	return 0;
+        return 0;
 
 
 }
 static ssize_t dump_store(struct device *dev,
-		struct device_attribute *attr,
-		const char *buffer, size_t count)
+                                        struct device_attribute *attr,
+                                        const char *buffer, size_t count)
 {
-	struct wimax732_platform_data   *pdata = dev_get_drvdata(dev);
+        struct wimax732_platform_data   *pdata = dev_get_drvdata(dev);
 
 	if (buffer[0] == '0') {
-		dump_debug("Control Dump Disabled.");
-		pdata->g_cfg->enable_dump_msg = 0;
-	} else if (buffer[0] == '1') {
-		dump_debug("Control Dump Enabled.");
-		pdata->g_cfg->enable_dump_msg = 1;
-	}
+                dump_debug("Control Dump Disabled.");
+                pdata->g_cfg->enable_dump_msg = 0;
+        } else if (buffer[0] == '1') {
+                dump_debug("Control Dump Enabled.");
+                pdata->g_cfg->enable_dump_msg = 1;
+        }
 
-	return count - 1;
+        return count - 1;
 
 
 }
 
 static ssize_t sleepmode_show(struct device *dev,
-		struct device_attribute *attr, char *buf)
+                        struct device_attribute *attr, char *buf)
 {
-	return 0;
+        return 0;
 
 }
 static ssize_t sleepmode_store(struct device *dev,
-		struct device_attribute *attr,
-		const char *buffer, size_t count)
+                                        struct device_attribute *attr,
+                                        const char *buffer, size_t count)
 {
-	struct wimax732_platform_data   *pdata = dev_get_drvdata(dev);
+        struct wimax732_platform_data   *pdata = dev_get_drvdata(dev);
 
 	if (buffer[0] == '0') {
-		dump_debug("WiMAX Sleep Mode: VI");
-		pdata->g_cfg->sleep_mode = 0;
-	} else if (buffer[0] == '1') {
-		dump_debug("WiMAX Sleep Mode: IDLE");
-		pdata->g_cfg->sleep_mode = 1;
-	}
+                dump_debug("WiMAX Sleep Mode: VI");
+                pdata->g_cfg->sleep_mode = 0;
+        } else if (buffer[0] == '1') {
+                dump_debug("WiMAX Sleep Mode: IDLE");
+                pdata->g_cfg->sleep_mode = 1;
+        }
 
-	return count - 1;
+        return count - 1;
 
 }
 
@@ -1114,126 +1091,124 @@ static DEVICE_ATTR(sleepmode, 0664, NULL, NULL);
 
 static int wimax_probe(struct platform_device *pdev)
 {
-	struct wimax732_platform_data   *pdata = pdev->dev.platform_data;
+        struct wimax732_platform_data   *pdata = pdev->dev.platform_data;
 	struct device *dev_t;
-	int	error = 0;
-	int	err;
-	int     i;
+        int error = 0 ,err;
+        int     i;
 
-	dump_debug("SDIO driver installing... " WIMAX_DRIVER_VERSION_STRING);
+        dump_debug("SDIO driver installing... " WIMAX_DRIVER_VERSION_STRING);
 
-	pdata->swmxctl_dev.minor = SWMXGPIOMINOR;
-	pdata->swmxctl_dev.name = "swmxctl";
-	pdata->swmxctl_dev.fops = &swmx_fops;
+        pdata->swmxctl_dev.minor = SWMXGPIOMINOR;
+        pdata->swmxctl_dev.name = "swmxctl";
+        pdata->swmxctl_dev.fops = &swmx_fops;
 
-	misc_register(&pdata->swmxctl_dev);
+        misc_register(&pdata->swmxctl_dev);
 
-	if (error < 0) {
-		dump_debug("misc_register() failed");
-		return error;
-	}
-	mutex_init(&pdata->g_cfg->suspend_mutex);
+        if (error < 0) {
+                dump_debug("misc_register() failed");
+                return error;
+        }
+        mutex_init(&pdata->g_cfg->suspend_mutex);
 
-	for (i = 0; i < ARRAY_SIZE(adapter_table); i++)
-		adapter_table[i].driver_data =
-			(unsigned long) pdev->dev.platform_data;
+        for (i = 0; i < ARRAY_SIZE(adapter_table); i++)
+                adapter_table[i].driver_data =
+                        (unsigned long) pdev->dev.platform_data;
 
-	/* register SDIO driver */
-	error = sdio_register_driver(&adapter_driver);
-	if (error < 0) {
-		dump_debug("sdio_register_driver() failed");
-		return error;
-	}
+        /* register SDIO driver */
+        error = sdio_register_driver(&adapter_driver);
+        if (error < 0) {
+                dump_debug("sdio_register_driver() failed");
+                return error;
+        }
 
-	pdata->g_cfg->card_removed = true;
-	pdata->power(0);
-	/*Wimax sys entry*/
+        pdata->g_cfg->card_removed = true;
+        pdata->power(0);
+   /*Wimax sys entry*/
 
-	pdata->wimax_class = class_create(THIS_MODULE, "wimax");
-	if (IS_ERR(pdata->wimax_class))
-		dump_debug("%s: class create"
-			" failed\n", __func__);
+       pdata->wimax_class = class_create(THIS_MODULE, "wimax");
+        if (IS_ERR(pdata->wimax_class)) {
+                dump_debug("%s: class create failed(accelerometer)\n", __func__);
+        }
+	
 	dev_t = device_create(pdata->wimax_class, NULL,
-			MKDEV(SWMXGPIOMINOR, 0), "%s", "cmc732");
-	if (IS_ERR(dev_t)) {
-		dump_debug("%s: class create"
-			" failed\n", __func__);
-	}
+                                MKDEV(SWMXGPIOMINOR, 0), "%s", "cmc732");
+        if (IS_ERR(dev_t)) {
+                dump_debug("%s: class create failed(accelerometer)\n", __func__);
+        }
 	err = device_create_file(dev_t, &dev_attr_eeprom);
-	if (err < 0) {
-		dump_debug("%s: Failed to create device file(%s)\n",
-				__func__, dev_attr_eeprom.attr.name);
-	}
-
+        if (err < 0) {
+                dump_debug("%s: Failed to create device file(%s)\n",
+                                __func__, dev_attr_eeprom.attr.name);
+        }
+	
 	err = device_create_file(dev_t, &dev_attr_onoff);
-	if (err < 0) {
-		dump_debug("%s: Failed to create device file(%s)\n",
-				__func__, dev_attr_onoff.attr.name);
-	}
+        if (err < 0) {
+                dump_debug("%s: Failed to create device file(%s)\n",
+                                __func__, dev_attr_onoff.attr.name);
+        }
 
-	err = device_create_file(dev_t, &dev_attr_wmxuart);
-	if (err < 0) {
-		dump_debug("%s: Failed to create device file(%s)\n",
-				__func__, dev_attr_wmxuart.attr.name);
-	}
-	err = device_create_file(dev_t, &dev_attr_dump);
-	if (err < 0) {
-		dump_debug("%s: Failed to create device file(%s)\n",
-				__func__, dev_attr_dump.attr.name);
-	}
-	err = device_create_file(dev_t, &dev_attr_sleepmode);
-	if (err < 0) {
-		dump_debug("%s: Failed to create device file(%s)\n",
-				__func__, dev_attr_sleepmode.attr.name);
-	}
-
+	 err = device_create_file(dev_t, &dev_attr_wmxuart);
+        if (err < 0) {
+                dump_debug("%s: Failed to create device file(%s)\n",
+                                __func__, dev_attr_wmxuart.attr.name);
+        }
+	 err = device_create_file(dev_t, &dev_attr_dump);
+        if (err < 0) {
+                dump_debug("%s: Failed to create device file(%s)\n",
+                                __func__, dev_attr_dump.attr.name);
+        }
+	 err = device_create_file(dev_t, &dev_attr_sleepmode);
+        if (err < 0) {
+                dump_debug("%s: Failed to create device file(%s)\n",
+                                __func__, dev_attr_sleepmode.attr.name);
+        }
+ 	
 	dev_set_drvdata(dev_t, pdata);
 
-	/* End of Sysfs */
+ /* End of Sysfs */		
 
 #ifndef DRIVER_BIT_BANG
-	if (wmxeeprom_init())
+	if(wmxeeprom_init())
 		dump_debug("wmxeeprom_init() failed");
 #endif
-	/* initialize wake locks */
-	wake_lock_init(&pdata->g_cfg->wimax_wake_lock,
-			WAKE_LOCK_SUSPEND, "wimax_wakeup");
-	wake_lock_init(&pdata->g_cfg->wimax_rxtx_lock,
-			WAKE_LOCK_SUSPEND, "wimax_rxtx");
-	wake_lock_init(&pdata->g_cfg->wimax_tx_lock,
-			WAKE_LOCK_SUSPEND, "wimax_tx");
+   /* initialize wake locks */
+        wake_lock_init(&pdata->g_cfg->wimax_wake_lock,
+                        WAKE_LOCK_SUSPEND, "wimax_wakeup");
+        wake_lock_init(&pdata->g_cfg->wimax_rxtx_lock,
+                        WAKE_LOCK_SUSPEND, "wimax_rxtx");
+        wake_lock_init(&pdata->g_cfg->wimax_tx_lock,
+                        WAKE_LOCK_SUSPEND, "wimax_tx");
 
-
-	return error;
+        return error;
 }
 
 static int wimax_remove(struct platform_device *pdev)
 {
-	struct wimax732_platform_data   *pdata = pdev->dev.platform_data;
-	dump_debug("SDIO driver Uninstall");
+        struct wimax732_platform_data   *pdata = pdev->dev.platform_data;
+        dump_debug("SDIO driver Uninstall");
 
-	/* destroy wake locks */
-	wake_lock_destroy(&pdata->g_cfg->wimax_wake_lock);
-	wake_lock_destroy(&pdata->g_cfg->wimax_rxtx_lock);
-	wake_lock_destroy(&pdata->g_cfg->wimax_tx_lock);
+        /* destroy wake locks */
+        wake_lock_destroy(&pdata->g_cfg->wimax_wake_lock);
+        wake_lock_destroy(&pdata->g_cfg->wimax_rxtx_lock);
+        wake_lock_destroy(&pdata->g_cfg->wimax_tx_lock);
 	class_destroy(pdata->wimax_class);
-	sdio_unregister_driver(&adapter_driver);
-	misc_deregister(&pdata->swmxctl_dev);
-	return 0;
+        sdio_unregister_driver(&adapter_driver);
+        misc_deregister(&pdata->swmxctl_dev);
+        return 0;
 }
 int wimax_suspend(struct platform_device *pdev, pm_message_t state)
 {
-	if (!g_adapter)
+	if(!g_adapter)
 		return 0;
+	
+        struct wimax732_platform_data   *pdata = pdev->dev.platform_data;
 
-	struct wimax732_platform_data   *pdata = pdev->dev.platform_data;
-
-	dump_debug("[wimax] %s", __func__);
+	dump_debug("[wimax] %s",__func__);
 
 	if (!mutex_trylock(&pdata->g_cfg->suspend_mutex)) {
-		pr_debug("wimax send processing\n");
-		return -EBUSY;
-	}
+                pr_debug("wimax send processing\n");
+                return -EBUSY;
+        }
 
 
 	/* AP active pin LOW */
@@ -1245,49 +1220,49 @@ int wimax_suspend(struct platform_device *pdev, pm_message_t state)
 		pdata->uart_wimax();
 	}
 
-	return 0;
+        return 0;
 }
 
 /* wimax resume function */
 int wimax_resume(struct platform_device *pdev)
 {
-	if (!g_adapter)
+	if(!g_adapter)
 		return 0;
+	
+        struct wimax732_platform_data   *pdata = pdev->dev.platform_data;
 
-	struct wimax732_platform_data   *pdata = pdev->dev.platform_data;
+	dump_debug("[wimax] %s",__func__);
+        if (pdata->g_cfg->card_removed)
+                return 0;
 
-	dump_debug("[wimax] %s", __func__);
-	if (pdata->g_cfg->card_removed)
-		return 0;
+        /* AP active pin HIGH */
+        pdata->signal_ap_active(1);
 
-	/* AP active pin HIGH */
-	pdata->signal_ap_active(1);
+        /* wait wakeup noti for 1 sec otherwise suspend again */
+        wake_lock_timeout(&pdata->g_cfg->wimax_wake_lock, 1 * HZ);
 
-	/* wait wakeup noti for 1 sec otherwise suspend again */
-	wake_lock_timeout(&pdata->g_cfg->wimax_wake_lock, 1 * HZ);
-
-	mutex_unlock(&pdata->g_cfg->suspend_mutex);
-	return 0;
+        mutex_unlock(&pdata->g_cfg->suspend_mutex);
+        return 0;
 }
 
 static struct platform_driver wimax_driver = {
-	.probe          = wimax_probe,
-	.remove         = wimax_remove,
-	.suspend                = wimax_suspend,
-	.resume                 = wimax_resume,
-	.driver         = {
-		.name   = "wimax732_driver",
-	}
+        .probe          = wimax_probe,
+        .remove         = wimax_remove,
+ 	.suspend                = wimax_suspend,
+        .resume                 = wimax_resume,
+        .driver         = {
+        .name   = "wimax732_driver",
+        }
 };
 
 static int __init adapter_init_module(void)
 {
-	return platform_driver_register(&wimax_driver);
+        return platform_driver_register(&wimax_driver);
 }
 
 static void __exit adapter_deinit_module(void)
 {
-	platform_driver_unregister(&wimax_driver);
+        platform_driver_unregister(&wimax_driver);
 }
 
 
