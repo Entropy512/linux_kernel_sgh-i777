@@ -183,6 +183,7 @@ static int mmc_blk_ioctl(struct block_device *bdev, fmode_t mode,
 			mmc_claim_host(card->host);
 			if (!mmc_can_trim(card)) {
 				printk(KERN_ERR "MMCERASEINFO ioctl: MMC can not support trim operation.\n");
+				mmc_release_host(card->host);
 				return -EOPNOTSUPP;
 			}
 			info.pref_trim = card->pref_trim;

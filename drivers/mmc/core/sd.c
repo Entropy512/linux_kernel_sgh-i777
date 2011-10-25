@@ -451,7 +451,7 @@ static int mmc_sd_init_card(struct mmc_host *host, u32 ocr,
 			if (!err) {
 				if (retries > 1) {
 					printk(KERN_WARNING
-					       "%s: recovered\n",
+					       "%s: recovered\n", 
 					       mmc_hostname(host));
 				}
 				break;
@@ -497,12 +497,7 @@ static int mmc_sd_init_card(struct mmc_host *host, u32 ocr,
 		if (max_dtr > card->sw_caps.hs_max_dtr)
 			max_dtr = card->sw_caps.hs_max_dtr;
 	} else if (max_dtr > card->csd.max_dtr) {
-
-#ifdef CONFIG_TARGET_LOCALE_NAATT
-		max_dtr = 25000000;
-#else
-        max_dtr = card->csd.max_dtr;
-#endif
+		max_dtr = card->csd.max_dtr;
 	}
 
 	mmc_set_clock(host, max_dtr);
@@ -571,7 +566,7 @@ static void mmc_sd_detect(struct mmc_host *host)
 
 	BUG_ON(!host);
 	BUG_ON(!host->card);
-
+       
 	mmc_claim_host(host);
 
 	/*
@@ -796,3 +791,4 @@ err:
 
 	return err;
 }
+
