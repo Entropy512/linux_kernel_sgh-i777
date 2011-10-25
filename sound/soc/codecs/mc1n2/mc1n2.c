@@ -44,8 +44,6 @@
 
 #ifdef CONFIG_TARGET_LOCALE_NAATT
 #include "mc1n2_cfg_gsm.h"
-#elif defined(CONFIG_MACH_Q1_REV00) || defined(CONFIG_MACH_Q1_REV02)
-#include "mc1n2_cfg_q1.h"
 #else
 #include "mc1n2_cfg.h"
 #endif
@@ -2380,7 +2378,7 @@ static int mc1n2_write_reg(struct snd_soc_codec *codec,
 {
 	int err;
 
-
+	
 	if (reg < MC1N2_N_VOL_REG) {
 		err = write_reg_vol(codec, reg, value);
 	}
@@ -3164,7 +3162,7 @@ static int mc1n2_add_widgets(struct snd_soc_codec *codec)
 		return err;
 	}
 
-
+	
 	return 0;
 }
 
@@ -3381,7 +3379,7 @@ static int mc1n2_hwdep_ioctl_set_ae(struct snd_soc_codec *codec,
 
 	mutex_unlock(&mc1n2->mutex);
 
-
+	
 	return 0;
 }
 
@@ -3520,7 +3518,7 @@ static int mc1n2_hwdep_ioctl_set_ctrl(struct snd_soc_codec *codec,
 
 	kfree(info);
 
-
+	
 	return mc1n2_hwdep_map_error(err);
 }
 
@@ -3544,7 +3542,7 @@ static int mc1n2_hwdep_ioctl_read_reg(struct mc1n2_ctrl_args *args)
 
 	err = _McDrv_Ctrl(args->dCmd, &info, args->dPrm);
 
-
+	
 	if (err != MCDRV_SUCCESS) {
 		return mc1n2_hwdep_map_error(err);
 	}
@@ -3643,7 +3641,7 @@ static int mc1n2_hwdep_ioctl_notify(struct snd_soc_codec *codec,
 
 	mutex_unlock(&mc1n2->mutex);
 
-
+	
 	return 0;
 }
 
@@ -3850,7 +3848,7 @@ static int mc1n2_probe(struct platform_device *pdev)
 		}
 	}
 
-
+	
 	return 0;
 
 error_set_mode:
@@ -3893,7 +3891,7 @@ static int mc1n2_remove(struct platform_device *pdev)
 		}
 	}
 
-
+	
 	return 0;
 }
 
@@ -3949,7 +3947,7 @@ static int mc1n2_suspend(struct platform_device *pdev, pm_message_t state)
 	/* Suepend MCLK */
 	mc1n2_set_mclk_source(0);
 
-
+	
 error:
 	mutex_unlock(&mc1n2->mutex);
 
@@ -4008,7 +4006,7 @@ static int mc1n2_resume(struct platform_device *pdev)
 error:
 	mutex_unlock(&mc1n2->mutex);
 
-
+	
 	return err;
 }
 
@@ -4027,7 +4025,7 @@ static int mc1n2_i2c_detect(struct i2c_client *client, struct i2c_board_info *in
 {
 	UINT8	bHwid = mc1n2_i2c_read_byte(client, 8);
 
-
+	
 	if (bHwid != MC1N2_HW_ID_AB && bHwid != MC1N2_HW_ID_AA) {
 		return -ENODEV;
 	}
@@ -4116,7 +4114,7 @@ static int mc1n2_i2c_probe(struct i2c_client *client,
 		goto err_reg_dai;
 	}
 
-
+	
 	return 0;
 
 err_reg_dai:
@@ -4154,7 +4152,7 @@ static int mc1n2_i2c_remove(struct i2c_client *client)
 		kfree(codec);
 	}
 
-
+	
 	return 0;
 }
 
@@ -4189,7 +4187,7 @@ static void __exit mc1n2_exit(void)
 }
 module_exit(mc1n2_exit);
 
-MODULE_AUTHOR("Yamaha-Corporation");
+MODULE_AUTHOR("Yamaha Corporation");
 MODULE_DESCRIPTION("Yamaha MC-1N2 ALSA SoC codec driver");
 MODULE_LICENSE("GPL");
 MODULE_VERSION(MC1N2_DRIVER_VERSION);
