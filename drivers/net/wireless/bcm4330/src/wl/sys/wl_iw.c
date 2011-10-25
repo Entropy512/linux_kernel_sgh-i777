@@ -2735,7 +2735,7 @@ wl_iw_get_range(
 	}
 	rateset.count = dtoh32(rateset.count);
 	range->num_bitrates = rateset.count;
-	for (i = 0; i < rateset.count && i < WL_NUMRATES; i++)
+	for (i = 0; i < rateset.count && i < IW_MAX_BITRATES; i++)
 		range->bitrate[i] = (rateset.rates[i]& 0x7f) * 500000; /* convert to bps */
 	dev_wlc_intvar_get(dev, "nmode", &nmode);
 	dev_wlc_ioctl(dev, WLC_GET_PHYTYPE, &phytype, sizeof(phytype));
@@ -3259,12 +3259,6 @@ wl_iw_iscan_prep(wl_scan_params_t *params, wlc_ssid_t *ssid)
 	params->home_time = -1;
 #ifdef USE_INITIAL_2G_SCAN
 	if (g_first_broadcast_scan == BROADCAST_SCAN_FIRST_STARTED) {
-		/* Prevent Memory Corruption. */
-		if (g_init_scan_chan_num > 14) {
-			WL_ERROR(("%s : g_init_scan_chan_num %d\n",
-				__func__, g_init_scan_chan_num));
-			g_init_scan_chan_num = 14;
-		}
 		params->channel_num = g_init_scan_chan_num;
 		memcpy(params->channel_list, g_init_scan_chan_list, g_init_scan_chan_num*sizeof(uint16));
 		WL_SCAN(("Triggering 2.4G scan only\n"));
@@ -3946,14 +3940,6 @@ wl_iw_iscan_set_scan_broadcast_prep(struct net_device *dev, uint flag)
 				if ((0 < chan) && (chan <= 14))
 					g_init_scan_chan_num++;
 			}
-			/* Prevent Memory Corruption */
-			if (g_init_scan_chan_num > 14) {
-				WL_ERROR(("%s: channel_num %d is over(14)\n",
-					__func__, g_init_scan_chan_num));
-				WL_ERROR(("%s: list->count is returned %d\n",
-					__func__, list->count));
-				g_init_scan_chan_num = 14;
-			}
 			WL_SCAN(("%s: Trying %d channels for initial broad scan\n", __FUNCTION__, g_init_scan_chan_num));
 		}
 #endif /* USE_INITIAL_2G_SCAN */
@@ -4266,7 +4252,6 @@ wl_iw_handle_scanresults_ies(char **event_p, char *end,
 			wpa_snprintf_hex(buf + 10, 2+1, &(ie->len), 1);
 			wpa_snprintf_hex(buf + 12, 2*ie->len+1, ie->data, ie->len);
 			event = IWE_STREAM_ADD_POINT(info, event, end, &iwe, buf);
-			kfree(buf);
 #endif 
 			break;
 		}
@@ -4366,8 +4351,7 @@ wl_iw_get_scan_prep(
 				iwe.cmd = SIOCGIWRATE;
 				/* Those two flags are ignored... */
 				iwe.u.bitrate.fixed = iwe.u.bitrate.disabled = 0;
-				for (j = 0; j < bi->rateset.count &&
-							j < WL_NUMRATES; j++) {
+				for (j = 0; j < bi->rateset.count && j < IW_MAX_BITRATES; j++) {
 					iwe.u.bitrate.value =
 						(bi->rateset.rates[j] & 0x7f) * 500000;
 					value = IWE_STREAM_ADD_VALUE(info, event, value, end, &iwe,
@@ -4767,8 +4751,7 @@ wl_iw_iscan_get_scan(
 			iwe.cmd = SIOCGIWRATE;
 			/* Those two flags are ignored... */
 			iwe.u.bitrate.fixed = iwe.u.bitrate.disabled = 0;
-			for (j = 0; j < bi->rateset.count &&
-						 j < WL_NUMRATES; j++) {
+			for (j = 0; j < bi->rateset.count && j < IW_MAX_BITRATES; j++) {
 					iwe.u.bitrate.value =
 					        (bi->rateset.rates[j] & 0x7f) * 500000;
 				value = IWE_STREAM_ADD_VALUE(info, event, value, end, &iwe,
@@ -6781,8 +6764,6 @@ wl_iw_set_cscan(
 			g_first_broadcast_scan = BROADCAST_SCAN_FIRST_RESULT_CONSUMED;
 		}
 
-		net_os_wake_lock_timeout_enable(dev);
-
 		/* Combined SCAN execution */
 		res = wl_iw_combined_scan_set(dev, ssids_local, nssid, nchan);
 
@@ -7080,9 +7061,9 @@ set_ap_cfg(struct net_device *dev, struct ap_profile *ap)
 		} 
 #endif /* AP_ONLY */
 
-		/*  WMM and ARP offloading disable  */
-		dev_wlc_intvar_set(dev, "wme", 0);
-		dev_wlc_intvar_set(dev, "arpoe", 0);
+           /*  WMM and ARP offloading disable  */
+          dev_wlc_intvar_set(dev, "wme", 0);
+          dev_wlc_intvar_set(dev, "arpoe", 0);
 
 		updown = 1;
 		if ((res = dev_wlc_ioctl(dev, WLC_UP, &updown, sizeof(updown))) < 0) {
@@ -7698,13 +7679,6 @@ iwpriv_fw_reload(struct net_device *dev,
 			WL_ERROR(("Error: extracting FW_PATH='' string\n"));
 			goto exit_proc;
 		}
-
-#if (defined(CONFIG_MACH_SAMSUNG_P3) && defined(CHECK_CHIP_REV)) || defined(CONFIG_MACH_C1) || defined(CONFIG_MACH_N1)
-		if (g_chipver == 4) {
-		   WL_SOFTAP(("---------------- CHIP bcm4330_B2 for SoftAP --------------------- \r\n"));
-		   strcat(fwstr, "_b2");
-		}
-#endif
 
 		if  (strstr(fwstr, "aps") != NULL) {
 			  WL_SOFTAP(("GOT APSTA FIRMWARE\n"));
@@ -9655,10 +9629,8 @@ wl_iw_attach(struct net_device *dev, void * dhdp)
 
 	/* Allocate memory for iscan extra params */
 	iscan->iscan_ex_params_p = (wl_iscan_params_t*)kmalloc(params_size, GFP_KERNEL);
-	if (!iscan->iscan_ex_params_p) {
-		kfree(iscan);
+	if (!iscan->iscan_ex_params_p)
 		return -ENOMEM;
-	}
 	iscan->iscan_ex_param_size = params_size;
 	iscan->sysioc_pid = -1;
 	/* we only care about main interface so save a global here */
