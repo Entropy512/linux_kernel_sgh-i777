@@ -44,6 +44,8 @@ void process_indicate_packet(struct net_adapter *adapter, u_char *buffer)
 
 			if (*tmp_byte == 0x01) {
 				dump_debug("process_indicate_packet: MSG_RUN_RESP");
+				adapter->download_complete = TRUE;
+				wake_up_interruptible(&adapter->download_event);
 
 				if (g_cfg->wimax_mode == SDIO_MODE || g_cfg->wimax_mode == DM_MODE
 						|| g_cfg->wimax_mode == USB_MODE
@@ -54,21 +56,16 @@ void process_indicate_packet(struct net_adapter *adapter, u_char *buffer)
 					msleep(1200);	/* IMPORTANT!! wait for cmc730 can handle mac req packet */
 
 					kernel_thread((int (*)(void *))hw_get_mac_address, adapter, 0);
-				} else if (g_cfg->wimax_mode == WTM_MODE) {
-					adapter->download_complete = TRUE;
-					wake_up_interruptible(&adapter->download_event);
-					adapter->pdata->g_cfg->powerup_done = true ;
+
+				} 
+				else if (g_cfg->wimax_mode == WTM_MODE) {
 					adapter->wtm_task = kthread_create(
 					con0_poll_thread,       adapter, "%s",
 					"wimax_con0_poll_thread");
 					if (adapter->wtm_task)
 					  wake_up_process(
 					  adapter->wtm_task);
-				} else if (g_cfg->wimax_mode == AUTH_MODE) {
-					adapter->download_complete = TRUE;
-					wake_up_interruptible(&adapter->download_event);
-					adapter->pdata->g_cfg->powerup_done = true ;
-                		}
+                }
 			}
 			break;
 		default:
@@ -109,13 +106,13 @@ u_long process_private_cmd(struct net_adapter *adapter, void *buffer)
 			adapter->download_complete = TRUE;
 			wake_up_interruptible(&adapter->download_event);
 		}
+
 		return (sizeof(struct hw_private_packet) + ETHERNET_ADDRESS_LENGTH - sizeof(u_char));
 	}
 	case HwCodeLinkIndication: {
 		if ((cmd->value == HW_PROT_VALUE_LINK_DOWN)
 					&& (adapter->media_state != MEDIA_DISCONNECTED)) {
 			dump_debug("LINK_DOWN_INDICATION");
-			s3c_bat_use_wimax(0);
 
 			/* set values */
 			adapter->media_state = MEDIA_DISCONNECTED;
@@ -126,8 +123,7 @@ u_long process_private_cmd(struct net_adapter *adapter, void *buffer)
 		} else if ((cmd->value == HW_PROT_VALUE_LINK_UP)
 					&& (adapter->media_state != MEDIA_CONNECTED)) {
 			dump_debug("LINK_UP_INDICATION");
-			
-			s3c_bat_use_wimax(1);
+
 			/* set values */
 			adapter->media_state = MEDIA_CONNECTED;
 			adapter->net->mtu = WIMAX_MTU_SIZE;
