@@ -18,7 +18,7 @@
 /*
 ** FEATURE DEFINITIONs
 */
-#define _DEBUG
+#define _DEBUG 
 
 #define CDMA_IPC_C210_IDPRAM
 #define DPRAM_SIZE_16KB
@@ -26,7 +26,7 @@
 //#define DPRAM_SIZE_32KB
 
 #if defined(DPRAM_SIZE_16KB)
-/*
+/* 
 ** DPRAM SETTINGS - 16K S5PC210 Internal DPRAM
 */
 #define DPRAM_SIZE                                  0x4000  /* 16KB */
@@ -36,7 +36,7 @@
 #define DPRAM_PHONE2PDA_RAW_BUFFER_SIZE             7160
 #define DPRAM_INTERRUPT_PORT_SIZE                   2
 #elif defined(DPRAM_SIZE_32KB)
-/*
+/* 
 ** DPRAM SETTINGS - 32K External DPRAM
 */
 #define DPRAM_SIZE                                  0x8000  /* 32 KB */
@@ -71,7 +71,7 @@
 #define DPRAM_PHONE2PDA_FORMATTED_HEAD_ADDRESS      (DPRAM_PHONE2PDA_FORMATTED_START_ADDRESS)
 #define DPRAM_PHONE2PDA_FORMATTED_TAIL_ADDRESS      (DPRAM_PHONE2PDA_FORMATTED_START_ADDRESS + 0x0002)
 #define DPRAM_PHONE2PDA_FORMATTED_BUFFER_ADDRESS    (DPRAM_PHONE2PDA_FORMATTED_START_ADDRESS + 0x0004)
-
+ 
 #define DPRAM_PHONE2PDA_RAW_START_ADDRESS           (DPRAM_PHONE2PDA_FORMATTED_START_ADDRESS + (DPRAM_PHONE2PDA_FORMATTED_BUFFER_SIZE + 4))
 #define DPRAM_PHONE2PDA_RAW_HEAD_ADDRESS            (DPRAM_PHONE2PDA_RAW_START_ADDRESS)
 #define DPRAM_PHONE2PDA_RAW_TAIL_ADDRESS            (DPRAM_PHONE2PDA_RAW_START_ADDRESS + 0x0002)
@@ -139,7 +139,7 @@
 #define MAX_INDEX                   2
 
 
-/*
+/* 
 ** IOCTL COMMANDs
 */
 #define IOC_MZ_MAGIC                ('o')
@@ -148,7 +148,7 @@
 #define DPRAM_NVDATA_LOAD           _IO(IOC_MZ_MAGIC, 0xD2)
 #define DPRAM_PHONE_BOOTSTART       _IO(IOC_MZ_MAGIC, 0xD3)
 #define DPRAM_PHONE_BOOTTYPE        _IOW(IOC_MZ_MAGIC,0xD5, unsigned int)
-//#define DPRAM_PHONE_OFF           _IO(IOC_MZ_MAGIC,0xD6)
+//#define DPRAM_PHONE_OFF           _IO(IOC_MZ_MAGIC,0xD6)           
 #define IOCTL_ONEDRAM_WAKEUP        _IOW(IOC_MZ_MAGIC,0xD7, unsigned int)
 //#define DPRAM_PHONE_RESET           _IO(IOC_MZ_MAGIC,0xD8)
 #define DPRAM_PHONE_RAM_DUMP        _IO(IOC_MZ_MAGIC,0xD9)
@@ -171,9 +171,6 @@
 #define DPRAM_PHONE_SET_DEBUGLEVEL  _IO(IOC_SEC_MAGIC, 0xCC)
 #define DPRAM_PHONE_GET_DEBUGLEVEL  _IO(IOC_SEC_MAGIC, 0xCD)
 
-#define DPRAM_PHONE_CPRAMDUMP_START _IO(IOC_SEC_MAGIC, 0xCE)
-#define DPRAM_PHONE_CPRAMDUMP_DONE  _IO(IOC_SEC_MAGIC, 0xCF)
-
 #define CP_RESET_CODE		0xCDABCDAB
 
 /*
@@ -190,7 +187,7 @@
 /*
  * BOOT MAGIC KEY
  */
-#define DPRAM_BOOT_NORMAL           (('T'<<24) | ('B'<<16) | ('M'<<8) | 'N')
+#define DPRAM_BOOT_NORMAL           'TBMN'
 
 
 #ifdef CDMA_IPC_C210_IDPRAM
@@ -258,13 +255,12 @@ typedef struct {
 #define DRIVER_NAME                 "DPRAM"
 #define DRIVER_PROC_ENTRY           "driver/dpram"
 #define DRIVER_MAJOR_NUM            252
-#define DPRAM_DUMP_DEV_MAJOR        250
 
 /*
 ** MULTI PDP DEFINITIONs
 */
 #define APP_DEVNAME                 "multipdp"  /* Device node name for application interface */
-#define NUM_PDP_CONTEXT             5           /* number of PDP context */
+#define NUM_PDP_CONTEXT             4           /* number of PDP context */
 /* Device types */
 #define DEV_TYPE_NET                0           /* network device for IP data */
 #define DEV_TYPE_SERIAL             1           /* serial device for CSD */
@@ -337,14 +333,13 @@ struct pdp_info {
 #define LOGE(s, args...)        printk("[IDPRAM/Err] %s()| " s, __func__, ##args)   // Error log
 #define LOGA(s, args...)        printk("[IDPRAM] %s()| " s, __func__, ##args)       // Alway printf
 #define LOG(...)
-#define LOGL(...)
+#define LOGL(...) 
 #define PRINT_FUNC()
 #endif
 
 #ifdef _ENABLE_ERROR_DEVICE
 #define DPRAM_ERR_MSG_LEN       65
 #define DPRAM_ERR_DEVICE        "dpramerr"
-#define DPRAM_DUMP_DEVICE       "dpram_dump"
 #endif	/* _ENABLE_ERROR_DEVICE */
 
 
@@ -407,8 +402,8 @@ struct _mem_param {
 #define GPIO_LEVEL_HIGH             1
 
 #ifdef CDMA_IPC_C210_IDPRAM
-#define IDPRAM_WPEND_LOCK           (('l'<<24) | ('o'<<16) | ('c'<<8) | 'k')
-#define IDPRAM_WPEND_UNLOCK         (('u'<<24) | ('n'<<16) | ('l'<<8) | 'k')
+#define IDPRAM_WPEND_LOCK           'lock'
+#define IDPRAM_WPEND_UNLOCK         'unlk'
 #endif
 
 /*
@@ -416,3 +411,4 @@ struct _mem_param {
 */
 
 #endif	/* __IDPRAM_H__ */
+
