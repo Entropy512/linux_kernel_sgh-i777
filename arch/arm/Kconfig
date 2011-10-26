@@ -37,12 +37,6 @@ config ARM
 config HAVE_PWM
 	bool
 
-config TCP4_ATT_PATCH
-       bool "ATT TCP4 patch"
-	   default n
-	   help
-	     Support for ATT TCP stack changes
-
 config SYS_SUPPORTS_APM_EMULATION
 	bool
 
@@ -424,10 +418,10 @@ config ARCH_IOP33X
 	  Support for Intel's IOP33X (XScale) family of processors.
 
 config ARCH_IXP23XX
-	bool "IXP23XX-based"
+ 	bool "IXP23XX-based"
 	depends on MMU
 	select CPU_XSC3
-	select PCI
+ 	select PCI
 	select ARCH_USES_GETTIMEOFFSET
 	help
 	  Support for Intel's IXP23xx (XScale) family of processors.
@@ -1210,6 +1204,13 @@ config PCI_HOST_ITE8152
 source "drivers/pci/Kconfig"
 
 source "drivers/pcmcia/Kconfig"
+
+endmenu
+
+menu "Samsung Kernel Debug Features"
+
+config KERNEL_DEBUG_SEC
+        bool "KERNEL_DEBUG_SEC"
 
 endmenu
 
