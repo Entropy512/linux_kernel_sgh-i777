@@ -34,7 +34,6 @@ obj-$(CONFIG_KEYBOARD_PXA930_ROTARY)	+= pxa930_rotary.o
 obj-$(CONFIG_KEYPAD_S3C)		+= s3c-keypad.o
 obj-$(CONFIG_KEYBOARD_QT2160)		+= qt2160.o
 obj-$(CONFIG_KEYBOARD_SH_KEYSC)		+= sh_keysc.o
-obj-$(CONFIG_KEYBOARD_STMPE)		+= stmpe1601-keypad.o
 obj-$(CONFIG_KEYBOARD_STOWAWAY)		+= stowaway.o
 obj-$(CONFIG_KEYBOARD_SUNKBD)		+= sunkbd.o
 obj-$(CONFIG_KEYBOARD_TWL4030)		+= twl4030_keypad.o
