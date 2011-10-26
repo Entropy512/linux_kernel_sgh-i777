@@ -2,7 +2,7 @@
 
 * 
 
-*   SiI9244 ? MHL Transmitter Driver
+*   SiI9244 - MHL Transmitter Driver
 
 *
 
@@ -29,7 +29,6 @@
 *
 
 *****************************************************************************/
-
 
 #ifndef __SI_APICBUS_H__
 #define __SI_APICBUS_H__

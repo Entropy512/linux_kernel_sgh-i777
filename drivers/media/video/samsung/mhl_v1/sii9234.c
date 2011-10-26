@@ -1,8 +1,9 @@
+
 /***************************************************************************
 
-*
+* 
 
-*   SiI9244 ? MHL Transmitter Driver
+*   SiI9244 - MHL Transmitter Driver
 
 *
 
@@ -18,7 +19,7 @@
 
 *
 
-* This program is distributed Â¡Â°as isÂ¡Â± WITHOUT ANY WARRANTY of any
+* This program is distributed ¡°as is¡± WITHOUT ANY WARRANTY of any
 
 * kind, whether express or implied; without even the implied warranty
 
@@ -29,7 +30,6 @@
 *
 
 *****************************************************************************/
-
 
 #include <linux/interrupt.h>
 #include <linux/irq.h>
@@ -44,9 +44,9 @@
 #include <mach/regs-clock.h>
 #include <linux/miscdevice.h>
 #include <linux/slab.h>
-#include <linux/syscalls.h>
-#include <linux/fcntl.h>
-#include <asm/uaccess.h>
+#include <linux/syscalls.h> 
+#include <linux/fcntl.h> 
+#include <asm/uaccess.h> 
 #include <linux/regulator/consumer.h>
 #include <linux/mfd/max8998.h>
 #include <linux/mfd/max8997.h>
@@ -173,11 +173,11 @@ void MHL_On(bool on)
 			gpio_set_value(GPIO_MHL_SEL, GPIO_LEVEL_HIGH);
 			sii9234_cfg_power(1);
 			sii9234_init();
-		}
+		}	
 	} else {
 		if(!gpio_get_value(GPIO_MHL_SEL))
 			printk("[MHL] GPIO_MHL_SEL : already 0\n");
-		else {
+		else {	
 			sii9234_cfg_power(0);
 			gpio_set_value(GPIO_MHL_SEL, GPIO_LEVEL_LOW);
 		}
@@ -199,15 +199,15 @@ static ssize_t MHD_check_read(struct device *dev, struct device_attribute *attr,
 	s3c_gpio_setpull(GPIO_MHL_SEL, S3C_GPIO_PULL_UP);	//MHL_SEL
 
 	gpio_set_value(GPIO_MHL_SEL, GPIO_LEVEL_HIGH);
-
+	
 
 	//TVout_LDO_ctrl(true);
-
+	
 	if(!MHD_HW_IsOn())
 	{
 		sii9234_tpi_init();
 		res = MHD_Read_deviceID();
-		MHD_HW_Off();
+		MHD_HW_Off();		
 	}
 	else
 	{
@@ -241,7 +241,7 @@ static ssize_t MHD_check_read(struct device *dev, struct device_attribute *attr,
 	res = I2C_ReadByte(0x7A, 0x3D);
 
 	res = I2C_ReadByte(0x7A, 0xFF);
-
+		
 	s3c_gpio_setpull(GPIO_MHL_SEL, S3C_GPIO_PULL_NONE);	//MHL_SEL
 
 	gpio_set_value(GPIO_MHL_SEL, GPIO_LEVEL_LOW);
@@ -284,15 +284,15 @@ EXPORT_SYMBOL(get_sii9234_client);
 u8 sii9234_i2c_read(struct i2c_client *client, u8 reg)
 {
 	u8 ret;
-
+	
 	if(!MHL_i2c_init)
 	{
 		SII_DEV_DBG("I2C not ready");
 		return 0;
 	}
-
+	
 	i2c_smbus_write_byte(client, reg);
-
+	
 
 	ret = i2c_smbus_read_byte(client);
 
@@ -334,7 +334,7 @@ void sii9234_interrupt_event_work(struct work_struct *p)
 void mhl_int_irq_handler_sched(void)
 {
 	//printk(KERN_ERR "mhl_int_irq_handler_sched() is called\n");
-	queue_work(sii9234_wq, &sii9234_int_work);
+	queue_work(sii9234_wq, &sii9234_int_work);		
 }
 
 
@@ -342,21 +342,21 @@ irqreturn_t mhl_int_irq_handler(int irq, void *dev_id)
 {
 	printk(KERN_ERR "[MHL]mhl_int_irq_handler() is called\n");
 
-	if (gpio_get_value(GPIO_MHL_SEL))
+	if (gpio_get_value(GPIO_MHL_SEL))	
 		mhl_int_irq_handler_sched();
 
 	return IRQ_HANDLED;
 }
 
-
+ 
 irqreturn_t mhl_wake_up_irq_handler(int irq, void *dev_id)
 {
 
 	printk(KERN_ERR "mhl_wake_up_irq_handler() is called\n");
 
-	if (gpio_get_value(GPIO_MHL_SEL))
+	if (gpio_get_value(GPIO_MHL_SEL))	
 		mhl_int_irq_handler_sched();
-
+	
 	return IRQ_HANDLED;
 }
 
@@ -370,18 +370,18 @@ static int sii9234_i2c_probe(struct i2c_client *client, const struct i2c_device_
 	struct device *mhl_dev;
 
 	state = kzalloc(sizeof(struct sii9234_state), GFP_KERNEL);
-	if (state == NULL) {
+	if (state == NULL) {		
 		printk(KERN_ERR "failed to allocate memory \n");
 		return -ENOMEM;
 	}
-
+	
 	state->client = client;
 	i2c_set_clientdata(client, state);
 
 
-
+	
 	/* rest of the initialisation goes here. */
-
+	
 	printk(KERN_ERR "SII9234 attach success!!!\n");
 
 	sii9234_i2c_client = client;
@@ -422,16 +422,16 @@ static int sii9234a_i2c_probe(struct i2c_client *client, const struct i2c_device
 	struct sii9234_state *state;
 
 	state = kzalloc(sizeof(struct sii9234_state), GFP_KERNEL);
-	if (state == NULL) {
+	if (state == NULL) {		
 		printk(KERN_ERR "failed to allocate memory \n");
 		return -ENOMEM;
 	}
-
+	
 	state->client = client;
 	i2c_set_clientdata(client, state);
-
+	
 	/* rest of the initialisation goes here. */
-
+	
 	printk(KERN_ERR "SII9234A attach success!!!\n");
 
 	sii9234a_i2c_client = client;
@@ -454,21 +454,21 @@ static int sii9234b_i2c_probe(struct i2c_client *client, const struct i2c_device
 	struct sii9234_state *state;
 
 	state = kzalloc(sizeof(struct sii9234_state), GFP_KERNEL);
-	if (state == NULL) {
+	if (state == NULL) {		
 		printk(KERN_ERR "failed to allocate memory \n");
 		return -ENOMEM;
 	}
-
+	
 	state->client = client;
 	i2c_set_clientdata(client, state);
-
+	
 	/* rest of the initialisation goes here. */
-
+	
 	printk(KERN_ERR "SII9234B attach success!!!\n");
 
 	sii9234b_i2c_client = client;
 
-
+	
 	return 0;
 
 }
@@ -489,34 +489,34 @@ static int sii9234c_i2c_probe(struct i2c_client *client, const struct i2c_device
 	int ret;
 
 	state = kzalloc(sizeof(struct sii9234_state), GFP_KERNEL);
-	if (state == NULL) {
+	if (state == NULL) {		
 		printk(KERN_ERR "failed to allocate memory \n");
 		return -ENOMEM;
 	}
-
+	
 	state->client = client;
 	i2c_set_clientdata(client, state);
-
+	
 	/* rest of the initialisation goes here. */
-
+	
 	printk(KERN_ERR "SII9234C attach success!!!\n");
 
 	sii9234c_i2c_client = client;
 
-	msleep(100);
+	msleep(100);	
 
 	sii9234_wq = create_singlethread_workqueue("sii9234_wq");
 	INIT_WORK(&sii9234_int_work, sii9234_interrupt_event_work);
 
 	ret = request_threaded_irq(MHL_INT_IRQ, NULL, mhl_int_irq_handler,
-				IRQF_SHARED , "mhl_int", (void *) state);
+				IRQF_SHARED , "mhl_int", (void *) state); 
 	if (ret) {
 		printk(KERN_ERR "unable to request irq mhl_int"
 					" err:: %d\n", ret);
 		return ret;
-	}
+	}		
 	printk(KERN_ERR "MHL int reques successful %d\n", ret);
-
+	
 	ret = request_threaded_irq(MHL_WAKEUP_IRQ, NULL,
 		mhl_wake_up_irq_handler, IRQF_SHARED,
 		"mhl_wake_up", (void *) state);
@@ -524,8 +524,8 @@ static int sii9234c_i2c_probe(struct i2c_client *client, const struct i2c_device
 		printk(KERN_ERR "unable to request irq mhl_wake_up"
 					" err:: %d\n", ret);
 		return ret;
-	}
-
+	}		
+	
 	return 0;
 
 }
@@ -596,17 +596,15 @@ void sii9234_cfg_power(bool on)
 #ifdef CONFIG_TARGET_LOCALE_KOR
 		gpio_set_value(GPIO_HDMI_EN,GPIO_LEVEL_HIGH);
 #else
-		if(system_rev < 7) {
-#ifndef CONFIG_MACH_C1_NA_SPR_EPIC2_REV00
+		if(system_rev < 7)
 			gpio_set_value(GPIO_HDMI_EN,GPIO_LEVEL_HIGH);
-#endif
-		} else
+		else
 			gpio_set_value(GPIO_HDMI_EN_REV07,GPIO_LEVEL_HIGH);
 #endif
-
+		
 		s3c_gpio_cfgpin(GPIO_MHL_RST,S3C_GPIO_OUTPUT);	//MHL_RST
 		s3c_gpio_setpull(GPIO_MHL_RST, S3C_GPIO_PULL_NONE);
-
+	
 
 		s3c_gpio_setpull(GPIO_AP_SCL_18V, S3C_GPIO_PULL_DOWN);
 		gpio_set_value(GPIO_MHL_RST, GPIO_LEVEL_LOW);
@@ -624,11 +622,9 @@ void sii9234_cfg_power(bool on)
 #ifdef CONFIG_TARGET_LOCALE_KOR
 		gpio_set_value(GPIO_HDMI_EN,GPIO_LEVEL_HIGH);
 #else
-		if(system_rev < 7) {
-#ifndef CONFIG_MACH_C1_NA_SPR_EPIC2_REV00
+		if(system_rev < 7)
 		  gpio_set_value(GPIO_HDMI_EN,GPIO_LEVEL_LOW);
-#endif
-		}else
+		else
 			gpio_set_value(GPIO_HDMI_EN_REV07,GPIO_LEVEL_LOW);
 #endif
 		gpio_set_value(GPIO_MHL_RST, GPIO_LEVEL_LOW);
@@ -654,7 +650,7 @@ static void sii9234_cfg_gpio()
 
 	s3c_gpio_setpull(GPIO_MHL_INT, S3C_GPIO_PULL_DOWN);
 	set_irq_type(MHL_INT_IRQ, IRQ_TYPE_EDGE_RISING);
-	s3c_gpio_cfgpin(GPIO_MHL_INT, GPIO_MHL_INT_AF);
+	s3c_gpio_cfgpin(GPIO_MHL_INT, GPIO_MHL_INT_AF); 
 
 #ifdef CONFIG_TARGET_LOCALE_KOR
 	s3c_gpio_cfgpin(GPIO_HDMI_EN,S3C_GPIO_OUTPUT);	//HDMI_EN
@@ -662,11 +658,9 @@ static void sii9234_cfg_gpio()
 	s3c_gpio_setpull(GPIO_HDMI_EN, S3C_GPIO_PULL_NONE);
 #else
 	if(system_rev < 7) {
-#ifndef CONFIG_MACH_C1_NA_SPR_EPIC2_REV00
 		s3c_gpio_cfgpin(GPIO_HDMI_EN,S3C_GPIO_OUTPUT);	//HDMI_EN
 		gpio_set_value(GPIO_HDMI_EN,GPIO_LEVEL_LOW);
 		s3c_gpio_setpull(GPIO_HDMI_EN, S3C_GPIO_PULL_NONE);
-#endif
 	}
 	else {
 		s3c_gpio_cfgpin(GPIO_HDMI_EN_REV07,S3C_GPIO_OUTPUT);	//HDMI_EN
@@ -694,7 +688,7 @@ static int mhl_open(struct inode *ip, struct file *fp)
 
 static int mhl_release(struct inode *ip, struct file *fp)
 {
-
+	
 	printk(KERN_ERR "[%s] \n",__func__);
 	return 0;
 }
@@ -715,21 +709,21 @@ static int mhl_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 			put_user(data,(byte *)arg);
 			printk(KERN_ERR "MHL_READ_RCP_DATA read");
 			break;
-
+		
 		default:
 		break;
 	}
-#endif
+#endif		
 	return 0;
 }
 
 static struct file_operations mhl_fops = {
 	.owner  = THIS_MODULE,
 	.open   = mhl_open,
-	.release = mhl_release,
-	.ioctl = mhl_ioctl,
+    	.release = mhl_release,
+    	.ioctl = mhl_ioctl,
 };
-
+                 
 static struct miscdevice mhl_device = {
     .minor  = MISC_DYNAMIC_MINOR,
     .name   = "mhl",
@@ -742,7 +736,7 @@ static int __init sii9234_module_init(void)
 
 	sii9234_cfg_gpio();
 
-	/* sii9234_cfg_power(1);	//Turn On power to sii9234
+	/* sii9234_cfg_power(1);	//Turn On power to sii9234 
 	*/
 
 #ifdef MHL_SWITCH_TEST
@@ -764,36 +758,36 @@ static int __init sii9234_module_init(void)
 
 	ret = i2c_add_driver(&sii9234_i2c_driver);
 	if (ret != 0)
-		printk(KERN_ERR "[MHL SII9234] can't add i2c driver\n");
+		printk(KERN_ERR "[MHL SII9234] can't add i2c driver\n");	
 	else
 		printk(KERN_ERR "[MHL SII9234] add i2c driver\n");
 	ret = i2c_add_driver(&sii9234a_i2c_driver);
 	if (ret != 0)
-		printk(KERN_ERR "[MHL SII9234A] can't add i2c driver\n");
+		printk(KERN_ERR "[MHL SII9234A] can't add i2c driver\n");	
 	else
 		printk(KERN_ERR "[MHL SII9234A] add i2c driver\n");
 	ret = i2c_add_driver(&sii9234b_i2c_driver);
 	if (ret != 0)
-		printk(KERN_ERR "[MHL SII9234B] can't add i2c driver\n");
+		printk(KERN_ERR "[MHL SII9234B] can't add i2c driver\n");	
 	else
 		printk(KERN_ERR "[MHL SII9234B] add i2c driver\n");
 
 	ret = i2c_add_driver(&sii9234c_i2c_driver);
 	if (ret != 0)
-		printk(KERN_ERR "[MHL SII9234C] can't add i2c driver\n");
+		printk(KERN_ERR "[MHL SII9234C] can't add i2c driver\n");	
 	else
 		printk(KERN_ERR "[MHL SII9234C] add i2c driver\n");
 
-	return ret;
+	return ret;	
 }
 module_init(sii9234_module_init);
 static void __exit sii9234_exit(void)
 {
 	i2c_del_driver(&sii9234_i2c_driver);
 	i2c_del_driver(&sii9234a_i2c_driver);
-	i2c_del_driver(&sii9234b_i2c_driver);
+	i2c_del_driver(&sii9234b_i2c_driver);	
 	i2c_del_driver(&sii9234c_i2c_driver);
-
+	
 };
 module_exit(sii9234_exit);
 

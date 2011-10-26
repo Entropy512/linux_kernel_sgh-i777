@@ -2,7 +2,7 @@
 
 * 
 
-*   SiI9244 ? MHL Transmitter Driver
+*   SiI9244 - MHL Transmitter Driver
 
 *
 
@@ -29,8 +29,6 @@
 *
 
 *****************************************************************************/
-
-
 #ifndef Common_Def_H
 #define Common_Def_H
 
