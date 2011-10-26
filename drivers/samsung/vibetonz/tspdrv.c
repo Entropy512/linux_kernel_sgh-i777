@@ -138,17 +138,12 @@ struct max8997_haptic_info {
 
 static int set_vibetonz(int timeout)
 {
-#ifndef CONFIG_MACH_P6_REV02
 	struct regulator *regulator;
-#endif
 
 	if (!timeout) {
 		vibe_control_max8997(Immvib_pwm, 0);
 
 		if (regulator_hapticmotor_enabled == 1) {
-#ifdef CONFIG_MACH_P6_REV02
-			gpio_direction_output(GPIO_MOTOR_EN, 0);
-#else
 			regulator = regulator_get(NULL, "vmotor");
 
 			if (IS_ERR(regulator)) {
@@ -160,7 +155,7 @@ static int set_vibetonz(int timeout)
 			regulator_put(regulator);
 
 			regulator_hapticmotor_enabled = 0;
-#endif
+
 			DbgOut((KERN_INFO "tspdrv: DISABLE\n"));
 			wake_unlock(&vib_wake_lock);
 		}
@@ -169,9 +164,7 @@ static int set_vibetonz(int timeout)
 
 		_pwm_config(Immvib_pwm, VIBRATOR_DUTY, VIBRATOR_PERIOD);
 		vibe_control_max8997(Immvib_pwm, 1);
-#ifdef CONFIG_MACH_P6_REV02
-			gpio_direction_output(GPIO_MOTOR_EN, 1);
-#else
+
 		regulator = regulator_get(NULL, "vmotor");
 
 		if (IS_ERR(regulator)) {
@@ -181,7 +174,7 @@ static int set_vibetonz(int timeout)
 
 		regulator_enable(regulator);
 		regulator_put(regulator);
-#endif
+
 		regulator_hapticmotor_enabled = 1;
 
 		DbgOut((KERN_INFO "tspdrv: ENABLE\n"));

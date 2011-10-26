@@ -64,14 +64,6 @@
 #define ODR840_BW50	0xE0  /* ODR = 840Hz; BW = 50Hz   */
 #define ODR840_BW110	0xF0  /* ODR = 840Hz; BW = 110Hz  */
 
-#if defined(CONFIG_MACH_C1_NA_SPR_REV05) \
-|| defined(CONFIG_MACH_C1_NA_SPR_EPIC2_REV00)
-#define CTRL_REG4_DPS_SHIFT 4
-#define CTRL_REG4_250DPS	0x00
-#define CTRL_REG4_500DPS	0x01
-#define CTRL_REG4_2000DPS	0x10
-#endif
-
 #define MIN_ST		175
 #define MAX_ST		875
 #define AC		(1 << 7) /* register auto-increment bit */
@@ -128,10 +120,7 @@ struct k3g_data {
 	u32 time_to_read;	/* time needed to read one entry */
 	ktime_t polling_delay;	/* polling time for timer */
 };
-#if defined(CONFIG_MACH_C1_NA_SPR_REV05) \
-|| defined(CONFIG_MACH_C1_NA_SPR_EPIC2_REV00)
-int k3g_dps;
-#endif
+
 static int k3g_read_fifo_status(struct k3g_data *k3g_data)
 {
 	int fifo_status;
@@ -298,39 +287,7 @@ static irqreturn_t k3g_interrupt_thread(int irq, void *k3g_data_p)
 
 	return IRQ_HANDLED;
 }
-#if defined(CONFIG_MACH_C1_NA_SPR_REV05) \
-|| defined(CONFIG_MACH_C1_NA_SPR_EPIC2_REV00)
-static int k3g_get_dps(void)
-{
-	return k3g_dps;
-}
 
-static void k3g_set_dps(int dps)
-{
-	k3g_dps = dps;
-	pr_err("%s: %d dps stored\n", __func__, k3g_dps);
-}
-
-static ssize_t k3g_selftest_dps_show(struct device *dev,
-				struct device_attribute *attr, char *buf)
-{
-	return sprintf(buf, "%d\n", k3g_get_dps());
-}
-
-static ssize_t k3g_selftest_dps_store(struct device *dev,
-					struct device_attribute *attr,
-					const char *buf, size_t count)
-{
-	struct k3g_data *data = dev_get_drvdata(dev);
-	int data_buf = 0;
-
-	sscanf(buf, "%d", &data_buf);
-
-	k3g_set_dps(data_buf);
-
-	return count;
-}
-#endif
 static ssize_t k3g_show_enable(struct device *dev,
 			struct device_attribute *attr, char *buf)
 {
@@ -360,25 +317,6 @@ static ssize_t k3g_set_enable(struct device *dev,
 	mutex_lock(&k3g_data->lock);
 	if (new_enable) {
 		/* turning on */
-#if defined(CONFIG_MACH_C1_NA_SPR_REV05) \
-	|| defined(CONFIG_MACH_C1_NA_SPR_EPIC2_REV00)
-		if (k3g_get_dps() == 250) {
-			k3g_data->ctrl_regs[3] = (k3g_data->ctrl_regs[3] & 0xCF)
-				| (CTRL_REG4_250DPS << CTRL_REG4_DPS_SHIFT);
-			pr_err("%s: dps = %d CTRL_REG4 = 0x%x\n", __func__,
-				k3g_get_dps(), k3g_data->ctrl_regs[3]);
-		} else if (k3g_get_dps() == 500) {
-			k3g_data->ctrl_regs[3] = (k3g_data->ctrl_regs[3] & 0xCF)
-				| (CTRL_REG4_500DPS << CTRL_REG4_DPS_SHIFT);
-			pr_err("%s: dps = %d CTRL_REG4 = 0x%x\n", __func__,
-				k3g_get_dps(), k3g_data->ctrl_regs[3]);
-		} else if (k3g_get_dps() == 2000) {
-			k3g_data->ctrl_regs[3] = (k3g_data->ctrl_regs[3] & 0xCF)
-				| (CTRL_REG4_2000DPS << CTRL_REG4_DPS_SHIFT);
-			pr_err("%s: dps = %d CTRL_REG4 = 0x%x\n", __func__,
-				k3g_get_dps(), k3g_data->ctrl_regs[3]);
-		}
-#endif
 		err = i2c_smbus_write_i2c_block_data(k3g_data->client,
 			CTRL_REG1 | AC, sizeof(k3g_data->ctrl_regs),
 						k3g_data->ctrl_regs);
@@ -402,10 +340,6 @@ static ssize_t k3g_set_enable(struct device *dev,
 				k3g_data->polling_delay, HRTIMER_MODE_REL);
 		}
 	} else {
-#if defined(CONFIG_MACH_C1_NA_SPR_REV05) \
-	|| defined(CONFIG_MACH_C1_NA_SPR_EPIC2_REV00)
-		k3g_set_dps(0);
-#endif
 		if (k3g_data->interruptible)
 			disable_irq(k3g_data->client->irq);
 		else {
@@ -821,23 +755,14 @@ static ssize_t k3g_self_test(struct device *dev,
 		pass = 0;
 
 	/* restore backup register */
-	if (data->enable) {
-		for (i = 0; i < 10; i++) {
-			err = i2c_smbus_write_i2c_block_data(data->client,
-				CTRL_REG1 | AC, sizeof(backup_regs),
-				backup_regs);
-			if (err >= 0)
-				break;
-		}
-		if (err < 0)
-			pr_err("%s: CTRL_REGs i2c writing failed\n", __func__);
-	} else {
-		/* If k3g is not enabled, make it go to the power down mode. */
-		err = i2c_smbus_write_byte_data(data->client,
-						CTRL_REG1, 0x00);
-		if (err < 0)
-			pr_err("%s: CTRL_REGs i2c writing failed\n", __func__);
+	for (i = 0; i < 10; i++) {
+		err = i2c_smbus_write_i2c_block_data(data->client,
+			CTRL_REG1 | AC, sizeof(backup_regs), backup_regs);
+		if (err >= 0)
+			break;
 	}
+	if (err < 0)
+		pr_err("%s: CTRL_REGs i2c writing failed\n", __func__);
 
 exit:
 	if (pass == 2)
@@ -856,11 +781,7 @@ static DEVICE_ATTR(gyro_get_temp, 0664,
 	k3g_get_temp, NULL);
 static DEVICE_ATTR(gyro_selftest, 0664,
 	k3g_self_test, NULL);
-#if defined(CONFIG_MACH_C1_NA_SPR_REV05) \
-|| defined(CONFIG_MACH_C1_NA_SPR_EPIC2_REV00)
-static DEVICE_ATTR(gyro_selftest_dps, 0664,
-	k3g_selftest_dps_show, k3g_selftest_dps_store);
-#endif
+
 static const struct file_operations k3g_fops = {
 	.owner = THIS_MODULE,
 };
@@ -1029,23 +950,10 @@ static int k3g_probe(struct i2c_client *client,
 			dev_attr_gyro_selftest.attr.name);
 		goto device_create_file5;
 	}
-#if defined(CONFIG_MACH_C1_NA_SPR_REV05) \
-|| defined(CONFIG_MACH_C1_NA_SPR_EPIC2_REV00)
-	if (device_create_file(data->dev, &dev_attr_gyro_selftest_dps) < 0) {
-		pr_err("%s: Failed to create device file(%s)!\n", __func__,
-			dev_attr_gyro_selftest_dps.attr.name);
-		goto device_create_file6;
-	}
-#endif
 	dev_set_drvdata(data->dev, data);
 
 	return 0;
 
-#if defined(CONFIG_MACH_C1_NA_SPR_REV05) \
-|| defined(CONFIG_MACH_C1_NA_SPR_EPIC2_REV00)
-device_create_file6:
-	device_remove_file(data->dev, &dev_attr_gyro_selftest_dps);
-#endif
 device_create_file5:
 	device_remove_file(data->dev, &dev_attr_gyro_get_temp);
 device_create_file4:
@@ -1090,11 +998,7 @@ static int k3g_remove(struct i2c_client *client)
 	unregister_chrdev(K3G_MAJOR, "k3g");
 	device_remove_file(&k3g_data->input_dev->dev, &dev_attr_enable);
 	device_remove_file(&k3g_data->input_dev->dev, &dev_attr_poll_delay);
-#if defined(CONFIG_MACH_C1_NA_SPR_REV05) \
-	|| defined(CONFIG_MACH_C1_NA_SPR_EPIC2_REV00)
-	device_remove_file(&k3g_data->input_dev->dev,
-		&dev_attr_gyro_selftest_dps);
-#endif
+
 	if (k3g_data->enable)
 		err = i2c_smbus_write_byte_data(k3g_data->client,
 					CTRL_REG1, 0x00);
