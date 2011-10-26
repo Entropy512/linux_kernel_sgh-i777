@@ -329,11 +329,6 @@ static int ram_console_driver_probe(struct platform_device *pdev)
 		       "%lx\n", res, pdev->num_resources, res ? res->flags : 0);
 		return -ENXIO;
 	}
-	if (!res->start || !res->end) {
-		printk(KERN_ERR "ram_console: invalid start %zx or end %zx\n",
-		       res->start, res->end);
-		return -ENXIO;
-	}
 	buffer_size = res->end - res->start + 1;
 	start = res->start;
 	printk(KERN_INFO "ram_console: got buffer at %zx, size %zx\n",
