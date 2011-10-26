@@ -25,9 +25,6 @@
 #include <linux/gpio_keys.h>
 #include <linux/workqueue.h>
 #include <linux/gpio.h>
-#ifdef CONFIG_MACH_C1_NA_SPR_EPIC2_REV00
-#include <plat/gpio-cfg.h>
-#endif
 
 struct gpio_button_data {
 	struct gpio_keys_button *button;
@@ -47,13 +44,7 @@ struct gpio_keys_drvdata {
 
 #define HOME_KEY_VAL	102
 extern int touch_is_pressed;
-#if !defined(CONFIG_TOUCHSCREEN_MXT540E)
 extern void Mxt224_force_released(void);
-#endif
-
-#ifdef CONFIG_MACH_C1_NA_SPR_EPIC2_REV00
-#define HALL_CODE 248
-#endif
 
 /*
  * SYSFS interface for enabling/disabling keys and switches:
@@ -363,51 +354,25 @@ static void gpio_keys_report_event(struct gpio_button_data *bdata)
 	struct irq_desc *desc = irq_to_desc(gpio_to_irq(button->gpio));
 	int state = (gpio_get_value(button->gpio) ? 1 : 0) ^ button->active_low;
 
-#ifdef CONFIG_MACH_C1_NA_SPR_EPIC2_REV00
-	int gpio_hall_ic ;
-	if(button->code == HALL_CODE)
-	{
-		gpio_hall_ic = gpio_get_value(button->gpio);
-		if(gpio_hall_ic) //open
-		{
-			input_report_switch(input, SW_LID, !gpio_hall_ic);
-			input_sync(input);
-			printk("** SLIDE OPEN : %d\n ",!gpio_hall_ic);
-		}
-		else
-		{
-			input_report_switch(input, SW_LID, !gpio_hall_ic);
-			input_sync(input);
-			printk("** SLIDE CLOSED : %d\n ",!gpio_hall_ic);
+	bdata->key_state = !!state;
+
+	if (state && (button->code == HOME_KEY_VAL)) {
+		if (touch_is_pressed) {
+			printk(KERN_ERR
+			       "In Key routine, Touch Down!!! Touch state clear!!");
+			Mxt224_force_released();
 		}
 	}
-	else
-	{
-#endif
-		bdata->key_state = !!state;
 
-#if !defined(CONFIG_TOUCHSCREEN_MXT540E)
-		if (state && (button->code == HOME_KEY_VAL)) {
-			if (touch_is_pressed) {
-				printk(KERN_ERR
-				       "In Key routine, Touch Down!!! Touch state clear!!");
-				Mxt224_force_released();
-			}
-		}
-#endif
-
-		input_event(input, type, button->code,
-			    (desc->status & IRQ_WAKEUP) ? 1 : !!state);
-
-		/*
-		if (bdata->key_state == 1)
-			printk(KERN_ERR "key [%d] is pressed\n", bdata->button->code);
-		*/
-
-		input_sync(input);
-#ifdef CONFIG_MACH_C1_NA_SPR_EPIC2_REV00
-	}
-#endif
+	input_event(input, type, button->code,
+		    (desc->status & IRQ_WAKEUP) ? 1 : !!state);
+	
+	/*
+	if (bdata->key_state == 1)
+		printk(KERN_ERR "key [%d] is pressed\n", bdata->button->code);
+	*/
+	
+	input_sync(input);
 }
 
 static void gpio_keys_work_func(struct work_struct *work)
@@ -484,12 +449,6 @@ static int __devinit gpio_keys_setup_key(struct platform_device *pdev,
 	}
 
 	irqflags = IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING;
-#ifdef CONFIG_MACH_C1_NA_SPR_EPIC2_REV00
-	if (button->code == HALL_CODE)
-	{
-		s3c_gpio_setpull(button->gpio,S3C_GPIO_PULL_UP);
-	}
-#endif
 	/*
 	 * If platform has specified that the button can be disabled,
 	 * we don't want it to share the interrupt line.
@@ -567,26 +526,8 @@ static int __devinit gpio_keys_probe(struct platform_device *pdev)
 
 		if (button->wakeup)
 			wakeup = 1;
-#ifdef CONFIG_MACH_C1_NA_SPR_EPIC2_REV00
-		if(button->code== HALL_CODE)
-		{
-			input_set_capability(input, EV_SW, SW_LID);
-			if(gpio_get_value(button->gpio))
-			{
-				input->sw[SW_LID] = 0;
-			}
-			else
-			{
-				input->sw[SW_LID] = 1;
-			}
-		}
-		else
-		{
-#endif
-			input_set_capability(input, type, button->code);
-#ifdef CONFIG_MACH_C1_NA_SPR_EPIC2_REV00
-		}
-#endif
+
+		input_set_capability(input, type, button->code);
 	}
 
 	set_bit(KEY_CAMERA & KEY_MAX, input->keybit); /* for factory key test */
