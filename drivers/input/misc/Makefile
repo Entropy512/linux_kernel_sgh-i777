@@ -41,5 +41,3 @@ obj-$(CONFIG_INPUT_WISTRON_BTNS)	+= wistron_btns.o
 obj-$(CONFIG_INPUT_WM831X_ON)		+= wm831x-on.o
 obj-$(CONFIG_INPUT_YEALINK)		+= yealink.o
 obj-$(CONFIG_OPTICAL_CM3663)		+= cm3663.o
-obj-$(CONFIG_OPTICAL_GP2A)		+= gp2a.o
-obj-$(CONFIG_INPUT_LPS331AP)		+= lps331ap.o
