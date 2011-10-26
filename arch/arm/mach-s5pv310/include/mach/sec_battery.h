@@ -19,10 +19,6 @@
 #define HWREV_FOR_BATTERY	0x06
 #elif defined(CONFIG_TARGET_LOCALE_NTT)
 #define HWREV_FOR_BATTERY	0x0C
-#elif defined(CONFIG_MACH_C1_NA_SPR_EPIC2_REV00)
-#define HWREV_FOR_BATTERY	0xFC
-#elif defined(CONFIG_MACH_Q1_REV02)
-#define HWREV_FOR_BATTERY	0x02
 #else	/*U1 EUR OPEN */
 #define HWREV_FOR_BATTERY	0x08
 #endif
@@ -64,13 +60,11 @@ struct sec_bat_platform_data {
 	unsigned int adc_sub_arr_size;
 	struct sec_bat_adc_table_data *adc_sub_table;
 	unsigned int adc_sub_channel;
-	unsigned int (*get_lpcharging_state) (void);
-	void (*no_bat_cb) (void);
 #if defined(CONFIG_TARGET_LOCALE_NAATT)
-	bool (*get_recording_state) (void);
-	int (*get_current_cable_type_is_jig) (void);
 	int adc_vf_channel;
 #endif
+	unsigned int (*get_lpcharging_state) (void);
+	void (*no_bat_cb) (void);
 };
 
 #endif /* __MACH_SEC_BATTERY_H */

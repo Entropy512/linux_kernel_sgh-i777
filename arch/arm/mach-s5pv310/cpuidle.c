@@ -915,9 +915,6 @@ static int s5pv310_enter_core0_lpa(struct cpuidle_device *dev,
 	gpio_set_value(S5PV310_GPX1(6), 0);
 	gpio_set_value(S5PV310_GPX1(7), 0);
 #endif
-#ifdef CONFIG_SAMSUNG_PHONE_TTY
-	gpio_set_value(GPIO_PDA_ACTIVE, 0);
-#endif
 
 	s3c_pm_do_save(s5pv310_lpa_save, ARRAY_SIZE(s5pv310_lpa_save));
 
@@ -1014,9 +1011,6 @@ early_wakeup:
 #ifdef AFTR_DEBUG
 	/* OFF */
 	gpio_set_value(S5PV310_GPX1(7), 1);
-#endif
-#ifdef CONFIG_SAMSUNG_PHONE_TTY
-	gpio_set_value(GPIO_PDA_ACTIVE, 1);
 #endif
 
 	local_irq_enable();
@@ -1240,7 +1234,6 @@ static int check_usbotg_op(void)
 	return val & (A_SESSION_VALID | B_SESSION_VALID);
 }
 
-#ifdef CONFIG_USB_EHCI_HCD
 static int check_usb_host_op(void)
 {
 	extern int is_usb_host_phy_suspend(void);
@@ -1250,7 +1243,6 @@ static int check_usb_host_op(void)
 
 	return 1;
 }
-#endif
 
 #ifdef CONFIG_SND_S5P_RP
 extern int s5p_rp_get_op_level(void);	/* By srp driver */
@@ -1259,17 +1251,6 @@ extern volatile int s5p_rp_is_running;
 
 #ifdef CONFIG_RFKILL
 extern volatile int bt_is_running;
-#endif
-
-#ifdef CONFIG_SAMSUNG_PHONE_TTY
-static int is_dpram_in_use(void)
-{
-	/* This pin is high when CP might be accessing dpram */
-	/* return !!gpio_get_value(GPIO_CP_DUMP_INT); */
-	int x1_2 = __raw_readl(S5PV310_VA_GPIO2 + 0xC24) & 4; /* GPX1(2) */
-	pr_err("%s x1_2 is %s\n", __func__, x1_2 ? "high" : "low");
-	return x1_2;
-}
 #endif
 
 static int s5pv310_check_operation(void)
@@ -1296,18 +1277,11 @@ static int s5pv310_check_operation(void)
 	if (!s5p_rp_is_running)
 		return 1;
 
-#ifdef CONFIG_USB_EHCI_HCD
 	if (check_usb_host_op())
 		return 1;
-#endif
 
 #ifdef CONFIG_RFKILL
 	if (bt_is_running)
-		return 1;
-#endif
-
-#ifdef CONFIG_SAMSUNG_PHONE_TTY
-	if (is_dpram_in_use())
 		return 1;
 #endif
 

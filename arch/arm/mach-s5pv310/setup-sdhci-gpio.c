@@ -132,63 +132,71 @@ void s5pv310_setup_sdhci3_cfg_gpio(struct platform_device *dev, int width)
 
 #if defined(CONFIG_WIMAX_CMC) && defined(CONFIG_TARGET_LOCALE_NA)
 
-	if (gpio_get_value(GPIO_WIMAX_EN)) {
-		/* Set all the necessary GPK1[0:1] pins to special-function 2 */
-		for (gpio = S5PV310_GPK3(0); gpio < S5PV310_GPK3(2); gpio++) {
-			s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(2));
-			s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
-		}
+if(gpio_get_value(GPIO_WIMAX_EN))
+{
+	/* Set all the necessary GPK1[0:1] pins to special-function 2 */
+	for (gpio = S5PV310_GPK3(0); gpio < S5PV310_GPK3(2); gpio++) {
+		s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(2));
+		s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
+	}
 
-		/* Data pin GPK1[3:6] to special-function 2 */
-		for (gpio = S5PV310_GPK3(3); gpio <= S5PV310_GPK3(6); gpio++) {
-			s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(2));
-			s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
-		}
-		//__raw_writel(0x3FFF, GPK3DRV);
-		__raw_writel(0x2AAA, GPK3DRV);	// for sdio noise
+	/* Data pin GPK1[3:6] to special-function 2 */
+	for (gpio = S5PV310_GPK3(3); gpio <= S5PV310_GPK3(6); gpio++) {
+		s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(2));
+		s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
+	}
+	//__raw_writel(0x3FFF, GPK3DRV);
+	__raw_writel(0x2AAA, GPK3DRV); // for sdio noise
 
-		for (gpio = S5PV310_GPK3(0); gpio < S5PV310_GPK3(2); gpio++) {
+	for (gpio = S5PV310_GPK3(0); gpio < S5PV310_GPK3(2); gpio++) {
 
-			s3c_gpio_slp_cfgpin(gpio, S3C_GPIO_SLP_INPUT);
-			s3c_gpio_slp_setpull_updown(gpio, S3C_GPIO_PULL_NONE);
-
-		}
-
-		for (gpio = S5PV310_GPK3(3); gpio <= S5PV310_GPK3(6); gpio++) {
-
-			s3c_gpio_slp_cfgpin(gpio, S3C_GPIO_SLP_INPUT);
-			s3c_gpio_slp_setpull_updown(gpio, S3C_GPIO_PULL_NONE);
-
-		}
-
-	} else {
-		/* Set all the necessary GPK1[0:1] to Input pull down for power saving */
-		for (gpio = S5PV310_GPK3(0); gpio < S5PV310_GPK3(2); gpio++) {
-			s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(0));
-			s3c_gpio_setpull(gpio, S3C_GPIO_PULL_DOWN);
-		}
-
-		/* Data pin GPK1[3:6] to Input pull down for power saving */
-		for (gpio = S5PV310_GPK3(3); gpio <= S5PV310_GPK3(6); gpio++) {
-			s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(0));
-			s3c_gpio_setpull(gpio, S3C_GPIO_PULL_DOWN);
-		}
-
-		for (gpio = S5PV310_GPK3(0); gpio < S5PV310_GPK3(2); gpio++) {
-
-			s3c_gpio_slp_cfgpin(gpio, S3C_GPIO_SLP_INPUT);
-			s3c_gpio_slp_setpull_updown(gpio, S3C_GPIO_PULL_DOWN);
-
-		}
-
-		for (gpio = S5PV310_GPK3(3); gpio <= S5PV310_GPK3(6); gpio++) {
-
-			s3c_gpio_slp_cfgpin(gpio, S3C_GPIO_SLP_INPUT);
-			s3c_gpio_slp_setpull_updown(gpio, S3C_GPIO_PULL_DOWN);
-
-		}
+		s3c_gpio_slp_cfgpin(gpio,S3C_GPIO_SLP_INPUT );
+                s3c_gpio_slp_setpull_updown(gpio,S3C_GPIO_PULL_NONE );
 
 	}
+
+	for (gpio = S5PV310_GPK3(3); gpio < S5PV310_GPK3(6); gpio++) {
+
+                s3c_gpio_slp_cfgpin(gpio,S3C_GPIO_SLP_INPUT );
+                s3c_gpio_slp_setpull_updown(gpio,S3C_GPIO_PULL_NONE );
+
+        }
+
+
+}
+else
+{
+	  /* Set all the necessary GPK1[0:1] to Input pull down for power saving */
+        for (gpio = S5PV310_GPK3(0); gpio < S5PV310_GPK3(2); gpio++) {
+                s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(0));
+                s3c_gpio_setpull(gpio, S3C_GPIO_PULL_DOWN);
+        }
+
+        /* Data pin GPK1[3:6] to Input pull down for power saving */
+        for (gpio = S5PV310_GPK3(3); gpio <= S5PV310_GPK3(6); gpio++) {
+                s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(0));
+                s3c_gpio_setpull(gpio, S3C_GPIO_PULL_DOWN);
+        }
+
+
+	for (gpio = S5PV310_GPK3(0); gpio < S5PV310_GPK3(2); gpio++) {
+
+                s3c_gpio_slp_cfgpin(gpio,S3C_GPIO_SLP_INPUT );
+                s3c_gpio_slp_setpull_updown(gpio,S3C_GPIO_PULL_DOWN );
+
+        }
+
+        for (gpio = S5PV310_GPK3(3); gpio < S5PV310_GPK3(6); gpio++) {
+
+                s3c_gpio_slp_cfgpin(gpio,S3C_GPIO_SLP_INPUT );
+                s3c_gpio_slp_setpull_updown(gpio,S3C_GPIO_PULL_DOWN );
+
+        }
+
+
+
+
+}
 
 #else
 
@@ -204,7 +212,7 @@ void s5pv310_setup_sdhci3_cfg_gpio(struct platform_device *dev, int width)
 		s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
 	}
 	//__raw_writel(0x3FFF, GPK3DRV);
-	__raw_writel(0x2AAA, GPK3DRV);	// for sdio noise
+	__raw_writel(0x2AAA, GPK3DRV); // for sdio noise
 
 #endif
 
