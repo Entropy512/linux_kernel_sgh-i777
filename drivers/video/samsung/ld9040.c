@@ -58,12 +58,6 @@
 #define MAX_BL 255
 #define MAX_GAMMA_VALUE 24
 
-#if defined(CONFIG_TARGET_LOCALE_NAATT)
-#define DIM_BL_ATT	5
-#define MIN_BL_ATT	15
-#define MAX_BL_ATT	250
-#endif
-
 static unsigned int get_lcdtype;
 module_param_named(get_lcdtype, get_lcdtype, uint, 0444);
 MODULE_PARM_DESC(get_lcdtype, " get_lcdtype  in Bootloader");
@@ -78,8 +72,8 @@ struct ld9040 {
 	unsigned int			bl;
 	unsigned int			beforepower;
 	unsigned int			ldi_enable;
-	unsigned int			acl_enable;
-	unsigned int			cur_acl;
+	unsigned int 			acl_enable;
+	unsigned int 			cur_acl;
 	struct mutex	lock;
 	struct lcd_device		*ld;
 	struct backlight_device		*bd;
@@ -119,14 +113,11 @@ static int ld9040_spi_write(struct ld9040 *lcd,
 }
 
 static int ld9040_panel_send_sequence(struct ld9040 *lcd,
-	const unsigned short *seq)
+	const unsigned short *wbuf)
 {
 	int ret = 0, i = 0;
-	const unsigned short *wbuf;
 
 	mutex_lock(&lcd->lock);
-
-	wbuf = seq;
 
 	while ((wbuf[i] & DEFMASK) != ENDDEF) {
 		if ((wbuf[i] & DEFMASK) != SLEEPMSEC) {
@@ -142,192 +133,20 @@ static int ld9040_panel_send_sequence(struct ld9040 *lcd,
 
 	return ret;
 }
-
-#if  defined(CONFIG_TARGET_LOCALE_NAATT)
 static int get_gamma_value_from_bl(int bl)
 {
-	int backlightlevel;
+	int gamma_value =0;
+	int gamma_val_x10 =0;
 
-	/* brightness setting from platform is from 0 to 255
-	 * But in this driver, brightness is only supported from 0 to 24 */
-
-	switch (bl) {
-	case 0 ... 10:
-		backlightlevel = 0;
-		break;
-	case 11 ... 21:
-		backlightlevel = 1;
-		break;
-	case 22 ... 32:
-		backlightlevel = 2;
-		break;
-	case 33 ... 42:
-		backlightlevel = 3;
-		break;
-	case 43 ... 52:
-		backlightlevel = 4;
-		break;
-	case 53 ... 63:
-		backlightlevel = 5;
-		break;
-	case 64 ... 73:
-		backlightlevel = 6;
-		break;
-	case 74 ... 83:
-		backlightlevel = 7;
-		break;
-	case 84 ... 95:
-		backlightlevel = 8;
-		break;
-	case 96 ... 105:
-		backlightlevel = 9;
-		break;
-	case 106 ... 116:
-		backlightlevel = 10;
-		break;
-	case 117 ... 127:
-		backlightlevel = 11;
-		break;
-	case 128 ... 136:
-		backlightlevel = 12;
-		break;
-	case 137 ... 146:
-		backlightlevel = 13;
-		break;
-	case 147 ... 156:
-		backlightlevel = 14;
-		break;
-	case 157 ... 169:
-		backlightlevel = 15;
-		break;
-	case 170 ... 180:
-		backlightlevel = 16;
-		break;
-	case 181 ... 191:
-		backlightlevel = 17;
-		break;
-	case 192 ... 201:
-		backlightlevel = 18;
-		break;
-	case 202 ... 211:
-		backlightlevel = 19;
-		break;
-	case 212 ... 223:
-		backlightlevel = 20;
-		break;
-	case 224 ... 233:
-		backlightlevel = 21;
-		break;
-	case 234 ... 243:
-		backlightlevel = 22;
-		break;
-	case 244 ... 249:
-		backlightlevel = 23;
-		break;
-	case 250 ... 255:
-		backlightlevel = 24;
-		break;
-	default:
-		backlightlevel = 24;
-		break;
+	if(bl >= MIN_BL){
+		gamma_val_x10 = 10 *(MAX_GAMMA_VALUE-1)*bl/(MAX_BL-MIN_BL) + (10 - 10*(MAX_GAMMA_VALUE-1)*(MIN_BL)/(MAX_BL-MIN_BL));
+		gamma_value=(gamma_val_x10 +5)/10;
+	}else{
+		gamma_value =0;
 	}
-	return backlightlevel;
+
+	return gamma_value;
 }
-#else
-static int get_gamma_value_from_bl(int bl)
-{
-	int backlightlevel;
-
-	/* brightness setting from platform is from 0 to 255
-	 * But in this driver, brightness is only supported from 0 to 24 */
-
-	switch (bl) {
-	case 0:
-		backlightlevel = 0;
-		break;
-	case 1 ... 29:
-		backlightlevel = 0;
-		break;
-	case 30 ... 34:
-		backlightlevel = 1;
-		break;
-	case 35 ... 44:
-		backlightlevel = 2;
-		break;
-	case 45 ... 54:
-		backlightlevel = 3;
-		break;
-	case 55 ... 64:
-		backlightlevel = 4;
-		break;
-	case 65 ... 74:
-		backlightlevel = 5;
-		break;
-	case 75 ... 83:
-		backlightlevel = 6;
-		break;
-	case 84 ... 93:
-		backlightlevel = 7;
-		break;
-	case 94 ... 103:
-		backlightlevel = 8;
-		break;
-	case 104 ... 113:
-		backlightlevel = 9;
-		break;
-	case 114 ... 122:
-		backlightlevel = 10;
-		break;
-	case 123 ... 132:
-		backlightlevel = 11;
-		break;
-	case 133 ... 142:
-		backlightlevel = 12;
-		break;
-	case 143 ... 152:
-		backlightlevel = 13;
-		break;
-	case 153 ... 162:
-		backlightlevel = 14;
-		break;
-	case 163 ... 171:
-		backlightlevel = 15;
-		break;
-	case 172 ... 181:
-		backlightlevel = 16;
-		break;
-	case 182 ... 191:
-		backlightlevel = 17;
-		break;
-	case 192 ... 201:
-		backlightlevel = 18;
-		break;
-	case 202 ... 210:
-		backlightlevel = 19;
-		break;
-	case 211 ... 220:
-		backlightlevel = 20;
-		break;
-	case 221 ... 230:
-		backlightlevel = 21;
-		break;
-	case 231 ... 240:
-		backlightlevel = 22;
-		break;
-	case 241 ... 250:
-		backlightlevel = 23;
-		break;
-	case 251 ... 255:
-		backlightlevel = 24;
-		break;
-	default:
-		backlightlevel = 24;
-		break;
-	}
-	return backlightlevel;
-}
-#endif
-
 static int ld9040_gamma_ctl(struct ld9040 *lcd)
 {
 	int ret = 0;
@@ -368,66 +187,66 @@ static int ld9040_set_elvss(struct ld9040 *lcd)
 	struct ld9040_panel_data *pdata = lcd->lcd_pd->pdata;
 
 	if (get_lcdtype == LCDTYPE_M2) {  /* for M2 */
-		if (lcd->acl_enable) {
-			switch (lcd->bl) {
-			case 0 ... 14: /* 30cd ~ 200cd */
-				ret = ld9040_panel_send_sequence(lcd, pdata->elvss_table[0]);
-				break;
-			case 15 ... 24: /* 210cd ~ 300cd */
-				ret = ld9040_panel_send_sequence(lcd, pdata->elvss_table[1]);
-				break;
-			default:
-				break;
-			}
+		if (lcd->acl_enable) {			
+				switch (lcd->bl) {
+				case 0 ... 14: /* 30cd ~ 200cd */
+					ret = ld9040_panel_send_sequence(lcd, pdata->elvss_table[0]);
+					break;
+				case 15 ... 24: /* 210cd ~ 300cd */
+					ret = ld9040_panel_send_sequence(lcd, pdata->elvss_table[1]);
+					break;
+				default:
+					break;
+				}
 		} else {
-			switch (lcd->bl) {
-			case 0 ... 4: /* 30cd ~ 100cd */
-				ret = ld9040_panel_send_sequence(lcd, pdata->elvss_table[0]);
-				break;
-			case 5 ... 10: /* 110cd ~ 160cd */
-				ret = ld9040_panel_send_sequence(lcd, pdata->elvss_table[1]);
-				break;
-			case 11 ... 14: /* 170cd ~ 200cd */
-				ret = ld9040_panel_send_sequence(lcd, pdata->elvss_table[2]);
-				break;
-			case 15 ... 24: /* 210cd ~ 300cd */
-				ret = ld9040_panel_send_sequence(lcd, pdata->elvss_table[3]);
-				break;
-			default:
-				break;
-			}
+				switch (lcd->bl) {
+				case 0 ... 4: /* 30cd ~ 100cd */
+					ret = ld9040_panel_send_sequence(lcd, pdata->elvss_table[0]);
+					break;
+				case 5 ... 10: /* 110cd ~ 160cd */
+					ret = ld9040_panel_send_sequence(lcd, pdata->elvss_table[1]);
+					break;
+				case 11 ... 14: /* 170cd ~ 200cd */
+					ret = ld9040_panel_send_sequence(lcd, pdata->elvss_table[2]);
+					break;
+				case 15 ... 24: /* 210cd ~ 300cd */
+					ret = ld9040_panel_send_sequence(lcd, pdata->elvss_table[3]);
+					break;
+				default:
+					break;
+				}
 		}
 	} else {/* for SM2 (A1 line or A2 line) */
-		if (lcd->acl_enable) {
-			switch (lcd->bl) {
-			case 0 ... 14: /* 30cd ~ 200cd */
-				ret = ld9040_panel_send_sequence(lcd, pdata->elvss_sm2_table[0]);
-				break;
-			case 15 ... 24: /* 210cd ~ 300cd */
-				ret = ld9040_panel_send_sequence(lcd, pdata->elvss_sm2_table[1]);
-				break;
-			default:
-				break;
-			}
-		} else {
-			switch (lcd->bl) {
-			case 0 ... 4: /* 30cd ~ 100cd */
-				ret = ld9040_panel_send_sequence(lcd, pdata->elvss_sm2_table[0]);
-				break;
-			case 5 ... 10: /* 110cd ~ 160cd */
-				ret = ld9040_panel_send_sequence(lcd, pdata->elvss_sm2_table[1]);
-				break;
-			case 11 ... 14: /* 170cd ~ 200cd */
-				ret = ld9040_panel_send_sequence(lcd, pdata->elvss_sm2_table[2]);
-				break;
-			case 15 ... 24: /* 210cd ~ 300cd */
-				ret = ld9040_panel_send_sequence(lcd, pdata->elvss_sm2_table[3]);
-				break;
-			default:
-				break;
-			}
-		}
+	if (lcd->acl_enable) {
+				switch (lcd->bl) {
+				case 0 ... 14: /* 30cd ~ 200cd */
+					ret = ld9040_panel_send_sequence(lcd, pdata->elvss_sm2_table[0]);
+					break;
+				case 15 ... 24: /* 210cd ~ 300cd */
+					ret = ld9040_panel_send_sequence(lcd, pdata->elvss_sm2_table[1]);
+					break;
+				default:
+					break;
+				}
+	} else {
+				switch (lcd->bl) {
+				case 0 ... 4: /* 30cd ~ 100cd */
+					ret = ld9040_panel_send_sequence(lcd, pdata->elvss_sm2_table[0]);
+					break;
+				case 5 ... 10: /* 110cd ~ 160cd */
+					ret = ld9040_panel_send_sequence(lcd, pdata->elvss_sm2_table[1]);
+					break;
+				case 11 ... 14: /* 170cd ~ 200cd */
+					ret = ld9040_panel_send_sequence(lcd, pdata->elvss_sm2_table[2]);
+					break;
+				case 15 ... 24: /* 210cd ~ 300cd */
+					ret = ld9040_panel_send_sequence(lcd, pdata->elvss_sm2_table[3]);
+					break;
+				default:
+					break;
+				}
 	}
+}
 	dev_dbg(lcd->dev, "level  = %d\n", lcd->bl);
 
 	if (ret) {
@@ -446,10 +265,9 @@ static int ld9040_set_acl(struct ld9040 *lcd)
 
 	if (lcd->acl_enable) {
 		if (lcd->cur_acl == 0) {
-			if (lcd->bl == 0 || lcd->bl == 1) {
-				ret = ld9040_panel_send_sequence(lcd, pdata->acl_table[0]);
-				dev_dbg(lcd->dev, "ACL_cutoff_set Percentage : off!!\n");
-			} else
+			if(lcd->bl ==0 || lcd->bl ==1)
+				dev_dbg(lcd->dev,"if bl_value is 0 or 1, acl_on skipped\n");
+			else
 				ret = ld9040_panel_send_sequence(lcd, pdata->acl_on);
 		}
 		switch (lcd->bl) {
@@ -503,10 +321,11 @@ static int ld9040_set_acl(struct ld9040 *lcd)
 			}
 			break;
 		}
-	} else {
-		ret = ld9040_panel_send_sequence(lcd, pdata->acl_table[0]);
-		lcd->cur_acl = 0;
-		dev_dbg(lcd->dev, "ACL_cutoff_set Percentage : off!!\n");
+	}
+	else{
+			ret = ld9040_panel_send_sequence(lcd, pdata->acl_table[0]);
+			lcd->cur_acl = 0;
+			dev_dbg(lcd->dev, "ACL_cutoff_set Percentage : off!!\n");
 	}
 
 	if (ret) {
@@ -528,11 +347,12 @@ static int ld9040_ldi_init(struct ld9040 *lcd)
 			pdata->seq_displayctl_set,
 			pdata->seq_gtcon_set,
 			pdata->seq_panelcondition_set,
-			pdata->acl_table[0],
+			pdata->acl_on,
 			pdata->sleep_out,
 			pdata->elvss_on,
 			pdata->seq_pwrctl_set,
 			pdata->seq_gamma_set1,
+			pdata->gamma_ctrl,
 		};
 		for (i = 0; i < ARRAY_SIZE(init_seq); i++) {
 			ret = ld9040_panel_send_sequence(lcd, init_seq[i]);
@@ -546,11 +366,12 @@ static int ld9040_ldi_init(struct ld9040 *lcd)
 			pdata->seq_displayctl_set,
 			pdata->seq_gtcon_set,
 			pdata->seq_panelcondition_set,
-			pdata->acl_table[0],
+			pdata->acl_on,
 			pdata->sleep_out,
 			pdata->elvss_on,
 			pdata->seq_pwrctl_set_sm2_a2,
 			pdata->seq_sm2_gamma_set2,
+			pdata->gamma_ctrl,
 		};
 		for (i = 0; i < ARRAY_SIZE(init_seq_sm2); i++) {
 			ret = ld9040_panel_send_sequence(lcd, init_seq_sm2[i]);
@@ -564,11 +385,12 @@ static int ld9040_ldi_init(struct ld9040 *lcd)
 			pdata->seq_displayctl_set,
 			pdata->seq_gtcon_set,
 			pdata->seq_panelcondition_set,
-			pdata->acl_table[0],
+			pdata->acl_on,
 			pdata->sleep_out,
 			pdata->elvss_on,
 			pdata->seq_pwrctl_set,
 			pdata->seq_sm2_gamma_set1,
+			pdata->gamma_ctrl,
 		};
 		for (i = 0; i < ARRAY_SIZE(init_seq_sm2); i++) {
 			ret = ld9040_panel_send_sequence(lcd, init_seq_sm2[i]);
@@ -606,17 +428,20 @@ static int update_brightness(struct ld9040 *lcd)
 {
 	int ret;
 
-	ret = ld9040_gamma_ctl(lcd);
-	if (ret)
-		return -1;
-
+        ret = ld9040_gamma_ctl(lcd);
+        if (ret) {
+                return -1;
+        }
 	ret = ld9040_set_elvss(lcd);
-	if (ret)
+	if (ret) {
 		return -1;
+	}
 
 	ret = ld9040_set_acl(lcd);
-	if (ret)
+	if (ret) {
 		return -1;
+	}
+
 
 	return 0;
 }
@@ -709,8 +534,8 @@ static int ld9040_power_off(struct ld9040 *lcd)
 		ret = -EFAULT;
 		goto err;
 	} else {
-		msleep(pd->power_off_delay);
 		pd->power_on(lcd->ld, 0);
+		msleep(pd->power_off_delay);
 	}
 
 err:
@@ -761,29 +586,6 @@ static int ld9040_set_brightness(struct backlight_device *bd)
 {
 	int ret = 0, bl = bd->props.brightness;
 	struct ld9040 *lcd = bl_get_data(bd);
-
-#if  defined(CONFIG_TARGET_LOCALE_NAATT)
-	int brightness_ATT = 0;
-
-	if (bl >= 0 && bl < DIM_BL) {
-		brightness_ATT = bl * DIM_BL_ATT / DIM_BL;
-	} else if (bl >= DIM_BL && bl < MIN_BL) {
-		brightness_ATT = (bl - DIM_BL) *
-			(MIN_BL_ATT - DIM_BL_ATT);
-		brightness_ATT /= (MIN_BL - DIM_BL);
-		brightness_ATT += DIM_BL_ATT;
-	} else if (bl >= MIN_BL && bl <= MAX_BL) {
-		brightness_ATT = (bl - MIN_BL) *
-			(MAX_BL_ATT - MIN_BL_ATT);
-		brightness_ATT /= (MAX_BL - MIN_BL);
-		brightness_ATT += MIN_BL_ATT;
-	} else {
-		dev_err(&bd->dev, "[I777] bl(eur)=%d, (att)=%d"
-				"(Unknown Case)\n", bl, brightness_ATT);
-	}
-
-	bl = brightness_ATT;
-#endif
 
 	if (bl < MIN_BRIGHTNESS ||
 		bl > bd->props.max_brightness) {
@@ -836,12 +638,11 @@ device_attribute *attr, const char *buf, size_t size)
 	int value;
 	int rc;
 
-	rc = strict_strtoul(buf, (unsigned int)0, (unsigned long *)&value);
+	rc = strict_strtoul(buf, (unsigned int) 0, (unsigned long *)&value);
 	if (rc < 0)
 		return rc;
-	else {
+	else{
 		if (lcd->acl_enable != value) {
-			dev_info(dev, "%s - %d, %d\n", __func__, lcd->acl_enable, value);
 			lcd->acl_enable = value;
 			if (lcd->ldi_enable)
 				ld9040_set_acl(lcd);
@@ -886,7 +687,7 @@ device_attribute *attr, char *buf)
 	default:
 		sprintf(temp, "error\n");
 		strcat(buf, temp);
-		dev_info(dev, "read octa lcd type failed.\n");
+		dev_info(dev, "read octa lcd type failed. \n");
 		break;
 	}
 	return strlen(buf);
@@ -912,7 +713,7 @@ static ssize_t ld9040_sysfs_show_gamma_mode(struct device *dev,
 		strcat(buf, temp);
 		break;
 	default:
-		dev_info(dev, "gamma mode should be 0:2.2, 1:1.9)\n");
+		dev_info(dev, "gamma mode could be 0:2.2, 1:1.9 or 2:1.7)n");
 		break;
 	}
 
@@ -931,18 +732,21 @@ static ssize_t ld9040_sysfs_store_gamma_mode(struct device *dev,
 	if (rc < 0)
 		return rc;
 
-	if (lcd->gamma_mode > 1) {
+	if (lcd->gamma_mode > 1)
+	{
 		lcd->gamma_mode = 0;
 		dev_err(dev, "there are only 2 types of gamma mode(0:2.2, 1:1.9)\n");
-	} else
-		dev_info(dev, "%s :: gamma_mode=%d\n", __func__, lcd->gamma_mode);
-
-	if (lcd->ldi_enable) {
-		if ((lcd->current_brightness == lcd->bl) && (lcd->current_gamma_mode == lcd->gamma_mode))
-			dev_err(dev, "there is no gamma_mode & brightness changed\n");
-		else
-			ld9040_gamma_ctl(lcd);
 	}
+	else
+		dev_info(dev, "%s :: gamma_mode=%d\n", __FUNCTION__, lcd->gamma_mode);
+
+	if (lcd->ldi_enable)
+	{
+		if((lcd->current_brightness == lcd->bl) && (lcd->current_gamma_mode == lcd->gamma_mode))
+			printk("there is no gamma_mode & brightness changed\n");	
+		else	
+			ld9040_gamma_ctl(lcd);
+	}	
 	return len;
 }
 
@@ -967,14 +771,34 @@ static DEVICE_ATTR(gamma_table, 0664,
 
 #if defined(CONFIG_PM)
 #ifdef CONFIG_HAS_EARLYSUSPEND
+
+void ld9040_power_down(struct ld9040 *lcd)
+{
+	lcd->beforepower = lcd->power;
+	ld9040_power(lcd, FB_BLANK_POWERDOWN);
+}
+
+void ld9040_power_up(struct ld9040 *lcd)
+{
+	if (lcd->beforepower == FB_BLANK_UNBLANK)
+		lcd->power = FB_BLANK_POWERDOWN;
+
+	ld9040_power(lcd, FB_BLANK_UNBLANK);
+}
+
+#else
+#define ld9040_suspend		NULL
+#define ld9040_resume		NULL
+#endif
+
+#ifdef CONFIG_HAS_EARLYSUSPEND
 void ld9040_early_suspend(struct early_suspend *h)
 {
 	struct ld9040 *lcd = container_of(h, struct ld9040,
 								early_suspend);
-	dev_info(lcd->dev, "+%s\n", __func__);
-	ld9040_power(lcd, FB_BLANK_POWERDOWN);
-	dev_info(lcd->dev, "-%s\n", __func__);
-
+	printk("+ld9040_early_suspend()\n");
+	ld9040_power_down(lcd);
+	printk("-ld9040_early_suspend()\n");
 	return ;
 }
 
@@ -982,9 +806,9 @@ void ld9040_late_resume(struct early_suspend *h)
 {
 	struct ld9040 *lcd = container_of(h, struct ld9040,
 								early_suspend);
-	dev_info(lcd->dev, "+%s\n", __func__);
-	ld9040_power(lcd, FB_BLANK_UNBLANK);
-	dev_info(lcd->dev, "-%s\n", __func__);
+	printk("+ld9040_late_resume()\n");
+	ld9040_power_up(lcd);
+	printk("-ld9040_late_resume()\n");
 
 	return ;
 }
@@ -1005,10 +829,12 @@ static ssize_t ld9040_sysfs_store_lcd_power(struct device *dev,
 	if (rc < 0)
 		return rc;
 
-	if (lcd_enable)
+	if(lcd_enable) {
 		ld9040_power(lcd, FB_BLANK_UNBLANK);
-	else
+	}
+	else {
 		ld9040_power(lcd, FB_BLANK_POWERDOWN);
+	}
 
 	return len;
 }
@@ -1138,14 +964,17 @@ static int ld9040_probe(struct spi_device *spi)
 	register_early_suspend(&lcd->early_suspend);
 #endif
 
-	if (get_lcdtype == LCDTYPE_M2) { /* M2 */
-		dev_info(lcd->dev, "[LD9040 PROBE LOG] LCDTYPE : M2\n");
-	} else if (get_lcdtype == LCDTYPE_SM2_A1) { /* SM2 */
-		dev_info(lcd->dev, "[LD9040 PROBE LOG] LCDTYPE : SM2_A1\n");
-	} else if (get_lcdtype == LCDTYPE_SM2_A2) { /* SM2 */
-		dev_info(lcd->dev, "[LD9040 PROBE LOG] LCDTYPE : SM2_A2\n");
-	} else { /* UNKNOWN */
-		dev_info(lcd->dev, "[LD9040 PROBE LOG] LCDTYPE : Unknown(SM2_A1)\n");
+	if(get_lcdtype==LCDTYPE_M2) { /* M2 */
+			printk("[LD9040 PROBE LOG] LCDTYPE : M2 \n");
+	}
+	else if(get_lcdtype==LCDTYPE_SM2_A1) { /* SM2 */
+			printk("[LD9040 PROBE LOG] LCDTYPE : SM2_A1\n");
+	}
+	else if(get_lcdtype==LCDTYPE_SM2_A2) { /* SM2 */
+			printk("[LD9040 PROBE LOG] LCDTYPE : SM2_A2\n");
+	}
+	else { /* UNKNOWN */
+			printk("[LD9040 PROBE LOG] LCDTYPE : Unknown(SM2_A1)\n");
 	}
 
 	dev_info(&spi->dev, "ld9040 panel driver has been probed.\n");
