@@ -2318,7 +2318,6 @@ static int fimc_qbuf_output_single_buf(struct fimc_control *ctrl,
 #ifdef SYSMMU_FIMC
 	switch (format) {
 	case V4L2_PIX_FMT_RGB32:
-	case V4L2_PIX_FMT_RGB565:	/* fall through */
 		buf_set.vaddr_base[FIMC_ADDR_Y] = (dma_addr_t)ctx->fbuf.base;
 		break;
 	case V4L2_PIX_FMT_YUV420:
@@ -2343,7 +2342,6 @@ static int fimc_qbuf_output_single_buf(struct fimc_control *ctrl,
 #else
 	switch (format) {
 	case V4L2_PIX_FMT_RGB32:
-	case V4L2_PIX_FMT_RGB565:	/* fall through */
 		buf_set.base[FIMC_ADDR_Y] = (dma_addr_t)ctx->fbuf.base;
 		break;
 	case V4L2_PIX_FMT_YUV420:
@@ -2407,7 +2405,6 @@ static int fimc_qbuf_output_multi_buf(struct fimc_control *ctrl,
 #ifdef SYSMMU_FIMC
 	switch (format) {
 	case V4L2_PIX_FMT_RGB32:
-	case V4L2_PIX_FMT_RGB565:	/* fall through */
 		buf_set.vaddr_base[FIMC_ADDR_Y] = ctx->dst[idx].base[FIMC_ADDR_Y];
 		break;
 	case V4L2_PIX_FMT_YUV420:
@@ -2428,7 +2425,6 @@ static int fimc_qbuf_output_multi_buf(struct fimc_control *ctrl,
 #else
 	switch (format) {
 	case V4L2_PIX_FMT_RGB32:
-	case V4L2_PIX_FMT_RGB565:	/* fall through */
 		buf_set.base[FIMC_ADDR_Y] = ctx->dst[idx].base[FIMC_ADDR_Y];
 		break;
 	case V4L2_PIX_FMT_YUV420:
@@ -2493,6 +2489,15 @@ static int fimc_qbuf_output_dma_auto(struct fimc_control *ctrl,
 		memcpy(&fimd_rect_virtual, &fimd_rect, sizeof(fimd_rect));
 		fimc_outdev_dma_auto_dst_resize(&fimd_rect_virtual);
 
+		if (ctrl->fb.is_enable == 1) {
+			ret = s3cfb_direct_ioctl(ctrl->id, S3CFB_SET_WIN_OFF,
+					(unsigned long)NULL);
+			if (ret < 0) {
+				fimc_err("direct_ioctl(S3CFB_SET_WIN_OFF) fail\n");
+				return -EINVAL;
+			}
+		}
+
 		/* Get WIN var_screeninfo */
 		ret = s3cfb_direct_ioctl(id, FBIOGET_VSCREENINFO,
 						(unsigned long)&var);
@@ -2539,6 +2544,12 @@ static int fimc_qbuf_output_dma_auto(struct fimc_control *ctrl,
 			return -EINVAL;
 		}
 
+		ret = s3cfb_direct_ioctl(ctrl->id, S3CFB_SET_WIN_ON,
+				(unsigned long)NULL);
+		if (ret < 0) {
+			fimc_err("direct_ioctl(S3CFB_SET_WIN_ON) fail\n");
+			return -EINVAL;
+		}
 		/* fall through */
 
 	case FIMC_STREAMON_IDLE:
@@ -2771,7 +2782,9 @@ int fimc_qbuf_output(void *fh, struct v4l2_buffer *b)
 		ctx = &ctrl->out->ctx[ctx_num];
 		if (ctx_num != ctrl->out->last_ctx) {
 			ctrl->out->last_ctx = ctx->ctx_num;
-			fimc_outdev_set_ctx_param(ctrl, ctx);
+			ret = fimc_outdev_set_ctx_param(ctrl, ctx);
+			if (ret < 0)
+				return ret;
 		}
 
 		switch (ctx->overlay.mode) {

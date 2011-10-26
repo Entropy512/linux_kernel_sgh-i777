@@ -32,8 +32,6 @@
 #include <linux/hrtimer.h>
 #endif
 
-#define S5K5BBGX_BURST_MODE
-
 #ifdef CONFIG_LOAD_FILE
 #include <linux/vmalloc.h>
 #include <linux/fs.h>
@@ -54,6 +52,9 @@ static s32 large_file;
 	.nextBuf = NULL;	\
 }
 #endif
+
+//#define FUNC_DEBUG
+//#define CONFIG_CAM_DEBUG
 
 #define CHECK_ERR(x)	if (unlikely((x) < 0)) { \
 				cam_err("i2c failed, err %d\n", x); \
@@ -122,7 +123,7 @@ static int loadFile(void)
 
 	u8 *nBuf = NULL;
 	size_t file_size = 0, max_size = 0, testBuf_size = 0;
-	ssize_t nread = 0;
+	size_t nread = 0;
 	s32 check = 0, starCheck = 0;
 	s32 tmp_large_file = 0;
 	s32 i = 0;
@@ -457,22 +458,6 @@ static int s5k5bbgx_write_regs(struct v4l2_subdev *sd,
 	int ret = -EAGAIN;
 	u32 temp = 0;
 	u16 delay = 0;
-	int retry_count = 5;
-
-#ifdef S5K5BBGX_BURST_MODE
-	u16 addr, value;
-
-	int len = 0;
-	u8 buf[SZ_2K] = {0,};
-#else
-	u8 buf[4] = {0,};
-#endif
-	struct i2c_msg msg = {
-		msg.addr = client->addr,
-		msg.flags = 0,
-		msg.len = 4,
-		msg.buf = buf,
-	};
 
 	while (num--) {
 		temp = *packet++;
@@ -485,62 +470,27 @@ static int s5k5bbgx_write_regs(struct v4l2_subdev *sd,
 			continue;
 		}
 
-#ifdef S5K5BBGX_BURST_MODE
-		addr = temp >> 16;
-		value = temp & 0xFFFF;
+		ret = s5k5bbgx_write(client, temp);
 
-		switch (addr) {
-		case 0x0F12:
-			if (len == 0) {
-				buf[len++] = addr >> 8;
-				buf[len++] = addr & 0xFF;
-			}
-			buf[len++] = value >> 8;
-			buf[len++] = value & 0xFF;
+		/* In error circumstances
+		 *Give second shot
+		 */
+		if (unlikely(ret)) {
+			cam_warn("i2c retry one more time\n");
+			ret = s5k5bbgx_write(client, temp);
 
-			if ((*packet >> 16) != addr) {
-				msg.len = len;
-				goto s5k5bbgx_burst_write;
-			}
-			break;
-
-		case 0xFFFF:
-			break;
-
-		default:
-			msg.len = 4;
-			*(u32 *)buf = cpu_to_be32(temp);
-			goto s5k5bbgx_burst_write;
-		}
-
-		continue;
-#else
-		*(u32 *)buf = cpu_to_be32(temp);
-#endif
-
-#ifdef S5K5BBGX_BURST_MODE
-s5k5bbgx_burst_write:
-		len = 0;
-#endif
-		retry_count = 5;
-
-		while (retry_count--) {
-			ret = i2c_transfer(client->adapter, &msg, 1);
-			if (likely(ret == 1))
+			/* Give it one more shot */
+			if (unlikely(ret)) {
+				cam_warn("i2c retry twice\n");
+				ret = s5k5bbgx_write(client, temp);
 				break;
-			mdelay(10);
 			}
-
-		if (unlikely(ret < 0)) {
-			cam_err("ERR - 0x%08x write failed err=%d\n", (u32)packet, ret);
-			break;
 		}
-
 #ifdef S5K5BBGX_USLEEP
 		if (unlikely(state->vt_mode))
 			if (!(num%200))
 				s5k5bbgx_usleep(3);
-#endif
+#endif		
 	}
 
 	if (unlikely(ret < 0)) {
@@ -564,7 +514,7 @@ static int s5k5bbgx_get_exif(struct v4l2_subdev *sd)
 
 	/* Get shutter speed */
 	s5k5bbgx_read_reg(sd, REG_PAGE_SHUTTER, REG_ADDR_SHUTTER, &val);
-	state->exif.shutter_speed = 1000*1000 / (val *1000/ 400);
+	state->exif.shutter_speed = 1000 / (val / 400);
 	cam_dbg("val = %d\n", val);
 
 	/* Get ISO */
@@ -596,12 +546,10 @@ static int s5k5bbgx_check_dataline(struct v4l2_subdev *sd, s32 val)
 		err = s5k5bbgx_write_regs_from_sd(sd, "s5k5bbgx_pattern_off");
 #else
 	if (val) {
-		cam_dbg("load s5k5bbgx_pattern_on\n");
 		err = s5k5bbgx_write_regs(sd, s5k5bbgx_pattern_on,
 			sizeof(s5k5bbgx_pattern_on) / \
 			sizeof(s5k5bbgx_pattern_on[0]));
 	} else {
-		cam_dbg("load s5k5bbgx_pattern_off\n");
 		err = s5k5bbgx_write_regs(sd, s5k5bbgx_pattern_off,
 			sizeof(s5k5bbgx_pattern_off) / \
 			sizeof(s5k5bbgx_pattern_off[0]));
@@ -628,7 +576,7 @@ static int s5k5bbgx_debug_sensor_status(struct v4l2_subdev *sd)
 	/* Read REG_TC_GP_EnableCaptureChanged. */
 	err = s5k5bbgx_read_reg(sd, 0x7000, 0x01F6, &val);
 	CHECK_ERR(err);
-
+	
 	switch(val) {
 	case 0:
 		cam_info("In normal mode(0)\n");
@@ -678,7 +626,7 @@ static inline int s5k5bbgx_check_esd(struct v4l2_subdev *sd)
 		return err;
 	}
 
-	return 0;
+	return 0;	
 }
 
 static int s5k5bbgx_set_preview_start(struct v4l2_subdev *sd)
@@ -691,7 +639,6 @@ static int s5k5bbgx_set_preview_start(struct v4l2_subdev *sd)
 #ifdef CONFIG_LOAD_FILE
 	err = s5k5bbgx_write_regs_from_sd(sd, "s5k5bbgx_preview");
 #else
-	cam_dbg("load s5k5bbgx_preview\n");
 	err = s5k5bbgx_write_regs(sd, s5k5bbgx_preview,
 		sizeof(s5k5bbgx_preview) / sizeof(s5k5bbgx_preview[0]));
 #endif
@@ -715,6 +662,7 @@ static int s5k5bbgx_set_preview_stop(struct v4l2_subdev *sd)
 
 static int s5k5bbgx_set_capture_start(struct v4l2_subdev *sd)
 {
+	struct s5k5bbgx_state *state = to_state(sd);
 	int err = -EINVAL;
 	u16 val = 1, retry = 0;
 
@@ -722,7 +670,6 @@ static int s5k5bbgx_set_capture_start(struct v4l2_subdev *sd)
 #ifdef CONFIG_LOAD_FILE
 	err = s5k5bbgx_write_regs_from_sd(sd, "s5k5bbgx_capture");
 #else
-	cam_dbg("load s5k5bbgx_capture\n");
 	err = s5k5bbgx_write_regs(sd, s5k5bbgx_capture,
 		sizeof(s5k5bbgx_capture) / sizeof(s5k5bbgx_capture[0]));
 #endif
@@ -895,27 +842,23 @@ static int s5k5bbgx_set_frame_rate(struct v4l2_subdev *sd, u32 fps)
 #else
 	switch (fps) {
 	case 7:
-		cam_dbg("load s5k5bbgx_vt_7fps\n");
 		err = s5k5bbgx_write_regs(sd, s5k5bbgx_vt_7fps,
 				sizeof(s5k5bbgx_vt_7fps) / \
 				sizeof(s5k5bbgx_vt_7fps[0]));
 		break;
 	case 10:
-		cam_dbg("load s5k5bbgx_vt_10fps\n");
 		err = s5k5bbgx_write_regs(sd, s5k5bbgx_vt_10fps,
 				sizeof(s5k5bbgx_vt_10fps) / \
 				sizeof(s5k5bbgx_vt_10fps[0]));
 
 		break;
 	case 12:
-		cam_dbg("load s5k5bbgx_vt_12fps\n");
 		err = s5k5bbgx_write_regs(sd, s5k5bbgx_vt_12fps,
 				sizeof(s5k5bbgx_vt_12fps) / \
 				sizeof(s5k5bbgx_vt_12fps[0]));
 
 		break;
 	case 15:
-		cam_dbg("load s5k5bbgx_vt_15fps\n");
 		err = s5k5bbgx_write_regs(sd, s5k5bbgx_vt_15fps,
 				sizeof(s5k5bbgx_vt_15fps) / \
 				sizeof(s5k5bbgx_vt_15fps[0]));
@@ -1000,7 +943,7 @@ static int s5k5bbgx_set_60hz_antibanding(struct v4l2_subdev *sd)
 	};
 
 	err = s5k5bbgx_write_regs(sd, s5k5bbgx_antibanding60hz,
-					sizeof(s5k5bbgx_antibanding60hz) / sizeof(s5k5bbgx_antibanding60hz[0]));
+				       	sizeof(s5k5bbgx_antibanding60hz) / sizeof(s5k5bbgx_antibanding60hz[0]));
 	printk("%s:  setting 60hz antibanding \n", __func__);
 	if (unlikely(err))
 	{
@@ -1058,52 +1001,39 @@ static int s5k5bbgx_init(struct v4l2_subdev *sd, u32 val)
 #endif
 	/* set initial regster value */
 #ifdef CONFIG_LOAD_FILE
-	if (state->sensor_mode == SENSOR_CAMERA) {
-		if (!state->vt_mode) {
-			cam_dbg("load camera common setting\n");
-			err = s5k5bbgx_write_regs_from_sd(sd,
-					"s5k5bbgx_common");
-		} else {
-			if (state->vt_mode == 1) {
-				cam_info("load camera VT call setting\n");
-				err = s5k5bbgx_write_regs_from_sd(sd,
-						"s5k5bbgx_vt_common");
-			} else {
-				cam_info("load camera WIFI VT call setting\n");
-				err = s5k5bbgx_write_regs_from_sd(sd,
-						"s5k5bbgx_vt_wifi_common");
-			}
-		}
-	} else {
-		cam_info("load recording setting\n");
+	if (!state->vt_mode) {
+		cam_dbg("load camera common setting\n");
 		err = s5k5bbgx_write_regs_from_sd(sd,
-			"s5k5bbgx_recording_common");
+				"s5k5bbgx_common");
+	} else {
+		if (state->vt_mode == 1) {
+			cam_info("load camera VT call setting\n");
+			err = s5k5bbgx_write_regs_from_sd(sd,
+					"s5k5bbgx_vt_common");
+		} else {
+			cam_info("load camera WIFI VT call setting\n");
+			err = s5k5bbgx_write_regs_from_sd(sd,
+					"s5k5bbgx_vt_wifi_common");
+		}
 	}
 #else
-	if (state->sensor_mode == SENSOR_CAMERA) {
-		if (!state->vt_mode) {
-			cam_info("load camera common setting\n");
-			err = s5k5bbgx_write_regs(sd, s5k5bbgx_common,
-				sizeof(s5k5bbgx_common) / \
-				sizeof(s5k5bbgx_common[0]));
-		} else {
-			if (state->vt_mode == 1) {
-				cam_info("load camera VT call setting\n");
-				err = s5k5bbgx_write_regs(sd, s5k5bbgx_vt_common,
-					sizeof(s5k5bbgx_vt_common) / \
-					sizeof(s5k5bbgx_vt_common[0]));
-			} else {
-				cam_info("load camera WIFI VT call setting\n");
-				err = s5k5bbgx_write_regs(sd, s5k5bbgx_vt_wifi_common,
-					sizeof(s5k5bbgx_vt_wifi_common) / \
-					sizeof(s5k5bbgx_vt_wifi_common[0]));
-			}
-		}
+	if (!state->vt_mode) {
+		cam_info("load camera common setting\n");
+		err = s5k5bbgx_write_regs(sd, s5k5bbgx_common,
+			sizeof(s5k5bbgx_common) / \
+			sizeof(s5k5bbgx_common[0]));
 	} else {
-		cam_info("load recording setting\n");
-		err = s5k5bbgx_write_regs(sd, s5k5bbgx_recording_common,
-			sizeof(s5k5bbgx_recording_common) / \
-			sizeof(s5k5bbgx_recording_common[0]));
+		if (state->vt_mode == 1) {
+			cam_info("load camera VT call setting\n");
+			err = s5k5bbgx_write_regs(sd, s5k5bbgx_vt_common,
+				sizeof(s5k5bbgx_vt_common) / \
+				sizeof(s5k5bbgx_vt_common[0]));
+		} else {
+			cam_info("load camera WIFI VT call setting\n");
+			err = s5k5bbgx_write_regs(sd, s5k5bbgx_vt_wifi_common,
+				sizeof(s5k5bbgx_vt_wifi_common) / \
+				sizeof(s5k5bbgx_vt_wifi_common[0]));
+		}
 	}
 #endif
 #ifdef CONFIG_CPU_FREQ
@@ -1237,12 +1167,11 @@ static int s5k5bbgx_s_stream(struct v4l2_subdev *sd, int enable)
 
 	case STREAM_MODE_CAM_ON:
 		/* The position of this code need to be adjusted later */
-		if (state->sensor_mode == SENSOR_CAMERA) {
-			if (state->req_fmt.priv == V4L2_PIX_FMT_MODE_CAPTURE)
-				err = s5k5bbgx_set_capture_start(sd);
-			else
-				err = s5k5bbgx_set_preview_start(sd);
-		}
+		if ((state->sensor_mode == SENSOR_CAMERA)
+		&& (state->req_fmt.priv == V4L2_PIX_FMT_MODE_CAPTURE))
+			err = s5k5bbgx_set_capture_start(sd);
+		else
+			err = s5k5bbgx_set_preview_start(sd);
 		break;
 
 	case STREAM_MODE_MOVIE_ON:
@@ -1337,56 +1266,47 @@ static int s5k5bbgx_set_brightness(struct v4l2_subdev *sd, struct v4l2_control *
 #else
 	switch (ctrl->value) {
 	case EV_MINUS_4:
-		cam_dbg("load s5k5bbgx_bright_m4\n");
 		err = s5k5bbgx_write_regs(sd, s5k5bbgx_bright_m4, \
 			sizeof(s5k5bbgx_bright_m4) / \
 			sizeof(s5k5bbgx_bright_m4[0]));
 		break;
 	case EV_MINUS_3:
-		cam_dbg("load s5k5bbgx_bright_m3\n");
 		err = s5k5bbgx_write_regs(sd, s5k5bbgx_bright_m3, \
 			sizeof(s5k5bbgx_bright_m3) / \
 			sizeof(s5k5bbgx_bright_m3[0]));
 
 		break;
 	case EV_MINUS_2:
-		cam_dbg("load s5k5bbgx_bright_m2\n");
 		err = s5k5bbgx_write_regs(sd, s5k5bbgx_bright_m2, \
 			sizeof(s5k5bbgx_bright_m2) / \
 			sizeof(s5k5bbgx_bright_m2[0]));
 		break;
 	case EV_MINUS_1:
-		cam_dbg("load s5k5bbgx_bright_m1\n");
 		err = s5k5bbgx_write_regs(sd, s5k5bbgx_bright_m1, \
 			sizeof(s5k5bbgx_bright_m1) / \
 			sizeof(s5k5bbgx_bright_m1[0]));
 		break;
 	case EV_DEFAULT:
-		cam_dbg("load s5k5bbgx_bright_default\n");
 		err = s5k5bbgx_write_regs(sd, s5k5bbgx_bright_default, \
 			sizeof(s5k5bbgx_bright_default) / \
 			sizeof(s5k5bbgx_bright_default[0]));
 		break;
 	case EV_PLUS_1:
-		cam_dbg("load s5k5bbgx_bright_p1\n");
 		err = s5k5bbgx_write_regs(sd, s5k5bbgx_bright_p1, \
 			sizeof(s5k5bbgx_bright_p1) / \
 			sizeof(s5k5bbgx_bright_p1[0]));
 		break;
 	case EV_PLUS_2:
-		cam_dbg("load s5k5bbgx_bright_p2\n");
 		err = s5k5bbgx_write_regs(sd, s5k5bbgx_bright_p2, \
 			sizeof(s5k5bbgx_bright_p2) / \
 			sizeof(s5k5bbgx_bright_p2[0]));
 		break;
 	case EV_PLUS_3:
-		cam_dbg("load s5k5bbgx_bright_p3\n");
 		err = s5k5bbgx_write_regs(sd, s5k5bbgx_bright_p3, \
 			sizeof(s5k5bbgx_bright_p3) / \
 			sizeof(s5k5bbgx_bright_p3[0]));
 		break;
 	case EV_PLUS_4:
-		cam_dbg("load s5k5bbgx_bright_p4\n");
 		err = s5k5bbgx_write_regs(sd, s5k5bbgx_bright_p4, \
 			sizeof(s5k5bbgx_bright_p4) / \
 			sizeof(s5k5bbgx_bright_p4[0]));
@@ -1440,26 +1360,22 @@ static int s5k5bbgx_set_blur(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 #else
 	switch (ctrl->value) {
 	case BLUR_LEVEL_0:
-		cam_dbg("load s5k5bbgx_vt_pretty_default\n");
 		err = s5k5bbgx_write_regs(sd, s5k5bbgx_vt_pretty_default, \
 			sizeof(s5k5bbgx_vt_pretty_default) / \
 			sizeof(s5k5bbgx_vt_pretty_default[0]));
 		break;
 	case BLUR_LEVEL_1:
-		cam_dbg("load s5k5bbgx_vt_pretty_1\n");
 		err = s5k5bbgx_write_regs(sd, s5k5bbgx_vt_pretty_1, \
 			sizeof(s5k5bbgx_vt_pretty_1) / \
 			sizeof(s5k5bbgx_vt_pretty_1[0]));
 		break;
 	case BLUR_LEVEL_2:
-		cam_dbg("load s5k5bbgx_vt_pretty_2\n");
 		err = s5k5bbgx_write_regs(sd, s5k5bbgx_vt_pretty_2, \
 			sizeof(s5k5bbgx_vt_pretty_2) / \
 			sizeof(s5k5bbgx_vt_pretty_2[0]));
 		break;
 	case BLUR_LEVEL_3:
 	case BLUR_LEVEL_MAX:
-		cam_dbg("load s5k5bbgx_vt_pretty_3\n");
 		err = s5k5bbgx_write_regs(sd, s5k5bbgx_vt_pretty_3, \
 			sizeof(s5k5bbgx_vt_pretty_3) / \
 			sizeof(s5k5bbgx_vt_pretty_3[0]));
@@ -1494,7 +1410,7 @@ static int s5k5bbgx_check_dataline_stop(struct v4l2_subdev *sd)
 	//s5k5bbgx_write(client, 0xFCFCD000);
 	//s5k5bbgx_write(client, 0x0028D000);
 	//s5k5bbgx_write(client, 0x002A3100);
-	//s5k5bbgx_write(client, 0x0F120000);
+    	//s5k5bbgx_write(client, 0x0F120000);
 
    //	err =  s5k5bbgx_write_regs(sd, s5k5bbgx_pattern_off,	sizeof(s5k5bbgx_pattern_off) / sizeof(s5k5bbgx_pattern_off[0]));
 	printk("%s: sensor reset\n", __func__);

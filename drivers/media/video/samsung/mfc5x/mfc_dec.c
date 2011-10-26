@@ -1720,9 +1720,7 @@ int mfc_init_decoding(struct mfc_inst_ctx *ctx, union mfc_args *args)
 
 #ifdef CONFIG_CPU_FREQ
 	/* Fix MFC & Bus Frequency for High resolution for better performance */
-#if !defined(CONFIG_MACH_P6_REV02) && !defined(CONFIG_MACH_P6_REV00)
 	if (ctx->width >= 1920 || ctx->height >= 1080){
-#endif
 		if (atomic_read(&ctx->dev->busfreq_lock_cnt) == 0) {
 			/* For fixed MFC & Bus Freq to 160 & 266 MHz for 1080p Contents */
 			s5pv310_busfreq_lock(DVFS_LOCK_ID_MFC, BUS_L1);
@@ -1730,9 +1728,7 @@ int mfc_init_decoding(struct mfc_inst_ctx *ctx, union mfc_args *args)
 		}
 		atomic_inc(&ctx->dev->busfreq_lock_cnt);
 		ctx->busfreq_flag = true;
-#if !defined(CONFIG_MACH_P6_REV02) && !defined(CONFIG_MACH_P6_REV00)
 	}
-#endif
 #endif
 
 	/*

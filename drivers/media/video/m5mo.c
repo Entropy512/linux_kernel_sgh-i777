@@ -738,7 +738,7 @@ request_fw:
 
 		if (sensor_ver[0] == 'T' && sensor_ver[1] == 'B') {
 			err = request_firmware(&fw, M5MOTB_FW_PATH, dev);
-#if defined(CONFIG_TARGET_LOCALE_NA)
+#if defined(CONFIG_TARGET_LOCALE_NA) //TEMP forcely use OE path for compatibility with old targets
 		} else if ((sensor_ver[0] == 'O' && sensor_ver[1] == 'B') || (sensor_ver[0] == 'O' && sensor_ver[1] == 'E')) {
 			err = request_firmware(&fw, M5MOOE_FW_PATH, dev);
 #else
@@ -1473,9 +1473,6 @@ static int m5mo_set_af(struct v4l2_subdev *sd, int val)
 		}
 
 		state->focus.status = status;
-#if defined(CONFIG_TARGET_LOCALE_NA)
-		state->focus.mode = state->focus.ui_mode;
-#endif
 	} else {
 		err = m5mo_writeb(sd, M5MO_CATEGORY_LENS,
 			M5MO_LENS_AF_START, val ? 0x02 : 0x00);
@@ -1510,18 +1507,10 @@ static int m5mo_set_af_mode(struct v4l2_subdev *sd, int val)
 retry:
 	switch (val) {
 	case FOCUS_MODE_AUTO:
-#if defined(CONFIG_TARGET_LOCALE_NA)
-		state->focus.ui_mode = val;
-		state->focus.mode_select = FOCUS_MODE_SELECT_NORMAL;
-#endif
 		mode = 0x00;
 		break;
 
 	case FOCUS_MODE_MACRO:
-#if defined(CONFIG_TARGET_LOCALE_NA)
-		state->focus.ui_mode = val;
-		state->focus.mode_select = FOCUS_MODE_SELECT_MACRO;
-#endif
 		mode = 0x01;
 		break;
 
@@ -1535,17 +1524,7 @@ retry:
 		break;
 
 	case FOCUS_MODE_TOUCH:
-#if defined(CONFIG_TARGET_LOCALE_NA)
-		if (state->focus.ui_mode == FOCUS_MODE_AUTO) {
-			state->focus.mode_select = FOCUS_MODE_SELECT_TOUCH_NORMAL;
-			mode = 0x04;
-		} else {
-			state->focus.mode_select = FOCUS_MODE_SELECT_TOUCH_MACRO;
-			mode = 0x01;
-		}
-#else
 		mode = 0x04;
-#endif
 		cancel = 0;
 		break;
 
@@ -1569,9 +1548,6 @@ retry:
 	}
 
 	cam_dbg("E, value %d\n", val);
-#if defined(CONFIG_TARGET_LOCALE_NA)
-	cam_dbg("E, mode_select %d\n", state->focus.mode_select);
-#endif
 
 	if (val == FOCUS_MODE_FACEDETECT) {
 		/* enable face detection */
@@ -1606,84 +1582,12 @@ retry:
 
 	if ((status & 0x01) != 0x00) {
 		cam_err("failed\n");
-
-		#if defined(CONFIG_TARGET_LOCALE_NAATT)
-		err = m5mo_writeb(sd, M5MO_CATEGORY_LENS, M5MO_LENS_AF_START, 0);
-		CHECK_ERR(err);
-
-		for (i = M5MO_I2C_VERIFY; i; i--) {
-			msleep(10);
-			err = m5mo_readb(sd, M5MO_CATEGORY_LENS, M5MO_LENS_AF_STATUS, &status);
-			CHECK_ERR(err);
-
-			if (!(status & 0x01))
-				break;
-		}
-
-		return 0;
-		#else
-#if defined(CONFIG_TARGET_LOCALE_NA)
-		return 0;
-#else
 		return -ETIMEDOUT;
-#endif
-		#endif
 	}
 
 	cam_trace("X\n");
 	return 0;
 }
-
-#if defined(CONFIG_TARGET_LOCALE_NA)
-static int m5mo_set_af_mode_select(struct v4l2_subdev *sd)
-{
-	struct m5mo_state *state = to_state(sd);
-	u32 mode_select = 0;
-	int err;
-
-	cam_dbg("E, ui_mode = %d\n", state->focus.ui_mode);
-	cam_dbg("E, mode = %d\n", state->focus.mode);
-
-	if (state->focus.mode != FOCUS_MODE_TOUCH) {
-		switch (state->focus.ui_mode) {
-		case FOCUS_MODE_AUTO:
-			state->focus.mode_select = FOCUS_MODE_SELECT_NORMAL;
-			break;
-		case FOCUS_MODE_MACRO:
-			state->focus.mode_select = FOCUS_MODE_SELECT_MACRO;
-			break;
-		default:
-			cam_warn("invalid value, mode %d\n", state->focus.mode);
-		}
-	}
-
-	switch (state->focus.mode_select) {
-	case FOCUS_MODE_SELECT_NORMAL:
-		mode_select = 0x00;
-		break;
-	case FOCUS_MODE_SELECT_MACRO:
-		mode_select = 0x01;
-		break;
-	case FOCUS_MODE_SELECT_TOUCH_NORMAL:
-		mode_select = 0x03;
-		break;
-	case FOCUS_MODE_SELECT_TOUCH_MACRO:
-		mode_select = 0x04;
-		break;
-	default:
-		cam_warn("No need to set mode_select value, %d", state->focus.mode_select);
-		return 0;
-	}
-
-	cam_dbg("E, mode_select = %d\n", mode_select);
-
-	err = m5mo_writeb(sd, M5MO_CATEGORY_LENS, M5MO_LENS_AF_MODE_SELECT, mode_select);
-	CHECK_ERR(err);
-
-	cam_trace("X\n");
-	return 0;
-}
-#endif
 
 static int m5mo_set_touch_auto_focus(struct v4l2_subdev *sd, int val)
 {
@@ -2011,9 +1915,6 @@ static int m5mo_s_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 		break;
 
 	case V4L2_CID_CAMERA_SET_AUTO_FOCUS:
-#if defined(CONFIG_TARGET_LOCALE_NA)
-		err = m5mo_set_af_mode_select(sd);
-#endif
 		err = m5mo_set_af(sd, ctrl->value);
 		break;
 
@@ -2233,7 +2134,7 @@ static int m5mo_program_fw(struct v4l2_subdev *sd,
 static int m5mo_load_fw(struct v4l2_subdev *sd)
 {
 	struct device *dev = sd->v4l2_dev->dev;
-	const struct firmware *fw = NULL;
+	const struct firmware *fw;
 	u8 sensor_ver[M5MO_FW_VER_LEN] = {0, };
 	u8 *buf = NULL, val, id;
 	int offset, err;
@@ -2280,7 +2181,7 @@ request_fw:
 
 		if (sensor_ver[0] == 'T' && sensor_ver[1] == 'B') {
 			err = request_firmware(&fw, M5MOTB_FW_PATH, dev);
-#if defined(CONFIG_TARGET_LOCALE_NA)
+#if defined(CONFIG_TARGET_LOCALE_NA) //TEMP forcely use OE path for compatibility with old targets
 		} else if ((sensor_ver[0] == 'O' && sensor_ver[1] == 'B') || (sensor_ver[0] == 'O' && sensor_ver[1] == 'E')) {
 			err = request_firmware(&fw, M5MOOE_FW_PATH, dev);
 #else
@@ -2697,10 +2598,7 @@ static int m5mo_s_stream(struct v4l2_subdev *sd, int enable)
 
 	case STREAM_MODE_MOVIE_ON:
 		state->recording = 1;
-#if defined(CONFIG_TARGET_LOCALE_NAATT)
-		if (state->pdata->set_recording_state)
-			state->pdata->set_recording_state(true);
-#endif
+
 		if (state->flash_mode != FLASH_MODE_OFF)
 			err = m5mo_set_flash(sd, state->flash_mode, 1);
 
@@ -2717,10 +2615,6 @@ static int m5mo_s_stream(struct v4l2_subdev *sd, int enable)
 		m5mo_set_flash(sd, FLASH_MODE_OFF, 1);
 
 		state->recording = 0;
-#if defined(CONFIG_TARGET_LOCALE_NAATT)
-		if (state->pdata->set_recording_state)
-			state->pdata->set_recording_state(false);
-#endif
 		break;
 
 	default:
@@ -2856,9 +2750,7 @@ static int m5mo_s_config(struct v4l2_subdev *sd, int irq, void *platform_data)
 		cam_err("no platform data\n");
 		return -ENODEV;
 	}
-#if defined(CONFIG_TARGET_LOCALE_NAATT)
-	state->pdata = platform_data;
-#endif
+
 	if (irq) {
 		/* wait queue initialize */
 		init_waitqueue_head(&state->isp.wait);
