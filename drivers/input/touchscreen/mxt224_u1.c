@@ -91,7 +91,7 @@
 
 #define MXT224_AUTOCAL_WAIT_TIME		2000
 
-#define T48_CALCFG_TA     0x50
+#define T48_CALCFG_TA     0x52
 #define	T48_CALCFG                0x40
 
 
@@ -166,18 +166,9 @@ static bool auto_cal_flag; /* 1: enabled,0: disabled*/
 static bool ta_status_pre = 0;
 static bool sleep_mode_flag = 0;
 
-#if defined(CONFIG_TARGET_LOCALE_NAATT)
-static bool gain_change_flag;
-static int gain_ta;
-#endif
-
 
 #ifdef CONFIG_TARGET_LOCALE_KOR
 static unsigned char is_inputmethod;
-#endif
-
-#ifdef CONFIG_MACH_C1_NA_SPR_EPIC2_REV00
-static bool suspend_ta_status;
 #endif
 
 static void mxt224_optical_gain(uint16_t dbg_mode);
@@ -311,19 +302,11 @@ static unsigned int qt_time_point;
 static unsigned int qt_time_diff;
 static unsigned int qt_timer_state;
 static unsigned int good_check_flag;
-#if defined CONFIG_TARGET_LOCALE_NA
-static unsigned int not_yet_count = 0;
-#endif
 static u8 atchcalst = 9;
 static u8 atchcalsthr = 30;
 
-#if defined CONFIG_TARGET_LOCALE_NA
 static u8 atchfrccalthr = 40;
 static u8 atchfrccalratio = 55;
-#else
-static u8 atchfrccalthr;
-static u8 atchfrccalratio;
-#endif
 
 static u8 cal_check_flag;
 
@@ -461,10 +444,20 @@ static void mxt224_ta_probe(int ta_status)
 		movfilter = 11;
 		blen = 32;
 	}
-
+	
 	if (copy_data->family_id==0x81) {
-		/*ret = get_object_info(copy_data, TOUCH_MULTITOUCHSCREEN_T9, &size_one, &obj_address);
+		ret = get_object_info(copy_data, GEN_ACQUISITIONCONFIG_T8, &size_one, &obj_address);
+		register_address=0;
 		size_one = 1;
+		if (ta_status)
+			value = 22;
+		else
+			value = 27;
+		write_mem(copy_data, obj_address+(u16)register_address, size_one, &value);
+		read_mem(copy_data, obj_address+(u16)register_address, (u8)size_one, &val);
+		printk(KERN_ERR"[TSP]TA_probe MXT224E T%d Byte%d is %d\n",8,register_address,val);
+
+		/*size_one = 1;
 		value = (u8)threshold_e;
 		write_mem(copy_data, obj_address+(u16)register_address, size_one, &value);
 		read_mem(copy_data, obj_address+(u16)register_address, (u8)size_one, &val);
@@ -478,66 +471,31 @@ static void mxt224_ta_probe(int ta_status)
 		value = calcfg_dis;
 		register_address=2;
 		ret = get_object_info(copy_data, PROCG_NOISESUPPRESSION_T48, &size_one, &obj_address);
-	    size = size_one;
 		size_one = 1;
 		write_mem(copy_data, obj_address+(u16)register_address, size_one, &value);
 		read_mem(copy_data, obj_address+(u16)register_address, (u8)size_one, &val);
-		printk(KERN_ERR"[TSP]TA_probe MXT224E T%d Byte%d is %d\n",48,register_address,val);
-
+		printk(KERN_ERR "[TSP] TA_probe MXT224e T%d Byte%d is %d\n", 48, register_address,val);
 		if (ta_status)
-		write_config(copy_data, PROCG_NOISESUPPRESSION_T48, copy_data->noise_suppression_cfg_ta);
+			write_config(copy_data, PROCG_NOISESUPPRESSION_T48, copy_data->noise_suppression_cfg_ta);
 		else
-		write_config(copy_data, PROCG_NOISESUPPRESSION_T48, copy_data->noise_suppression_cfg);
-#if defined(CONFIG_TARGET_LOCALE_NAATT)
-		if ((ta_status) && (gain_change_flag == 1)) {
-			value = gain_ta;
-			write_mem(copy_data, obj_address+34, size_one, &value);
-			read_mem(copy_data, obj_address+34, (u8)size_one, &val);
-			printk(KERN_DEBUG "[TSP]TA_probe MXT224E T%d Byte%d is %d\n", 48, 34, val);
-
-			value = 40;
-			write_mem(copy_data, obj_address+35, size_one, &value);
-			read_mem(copy_data, obj_address+35, (u8)size_one, &val);
-			printk(KERN_DEBUG "[TSP]TA_probe MXT224E T%d Byte%d is %d\n", 48, 35, val);
-
-			value = 240;
-			write_mem(copy_data, obj_address+43, size_one, &value);
-			read_mem(copy_data, obj_address+43, (u8)size_one, &val);
-
-			value = 245;
-			write_mem(copy_data, obj_address+44, size_one, &value);
-			read_mem(copy_data, obj_address+44, (u8)size_one, &val);
-
-			value = 148;
-			write_mem(copy_data, obj_address+47, size_one, &value);
-			read_mem(copy_data, obj_address+47, (u8)size_one, &val);
-
-			value = 50;
-			write_mem(copy_data, obj_address+48, size_one, &value);
-			read_mem(copy_data, obj_address+48, (u8)size_one, &val);
-		}
-#endif
+			write_config(copy_data, PROCG_NOISESUPPRESSION_T48, copy_data->noise_suppression_cfg);
 		value = calcfg_en;
 		write_mem(copy_data, obj_address+(u16)register_address, size_one, &value);
 		read_mem(copy_data, obj_address+(u16)register_address, (u8)size_one, &val);
 		printk(KERN_ERR"[TSP]TA_probe MXT224E T%d Byte%d is %d\n",48,register_address,val);
-		/*for (i = 0; i < size; i++) {
-		read_mem(copy_data, obj_address+i, 1, &val);
-		printk(KERN_ERR "[TSP] Byte %u --> %u\n", i, val);
-		}*/
 	} else {
 		ret = get_object_info(copy_data, TOUCH_MULTITOUCHSCREEN_T9, &size_one, &obj_address);
 		size_one = 1;
 		value = (u8)threshold;
 		write_mem(copy_data, obj_address+(u16)register_address, size_one, &value);
 		read_mem(copy_data, obj_address+(u16)register_address, (u8)size_one, &val);
-		printk(KERN_ERR"[TSP]TA_probe MXT224 T%d Byte%d is %d\n", 9, register_address, val);
+		printk(KERN_ERR "[TSP] TA_probe MXT224 T%d Byte%d is %d\n", 9, register_address, val);
 
 		value = (u8)movfilter;
-		register_address=13;
+		register_address = 13;		
 		write_mem(copy_data, obj_address+(u16)register_address, size_one, &value);
 		read_mem(copy_data, obj_address+(u16)register_address, (u8)size_one, &val);
-		printk(KERN_ERR"[TSP]TA_probe MXT224 T%d Byte%d is %d\n", 9, register_address, val);
+		printk(KERN_ERR "[TSP] TA_probe MXT224 T%d Byte%d is %d\n", 9, register_address, val);
 
 		value = noise_threshold;
 		register_address = 8;
@@ -545,112 +503,11 @@ static void mxt224_ta_probe(int ta_status)
 		size_one = 1;
 		write_mem(copy_data, obj_address+(u16)register_address, size_one, &value);
 		read_mem(copy_data, obj_address+(u16)register_address, (u8)size_one, &val);
-		printk(KERN_ERR"[TSP]TA_probe MXT224 T%d Byte%d is %d\n", 22, register_address, val);
+		printk(KERN_ERR "[TSP] TA_probe MXT224 T%d Byte%d is %d\n", 22, register_address, val);		
 	}
 	ta_status_pre = (bool)ta_status;
 };
 
-/*static void mxt224_ta_probe(int ta_status)
-{
-	u16 obj_address = 0;
-	u16 size_one;
-	int ret;
-	u8 value;
-	u8 val = 0;
-	unsigned int register_address = 7;
-	u8 calcfg;
-	u8 noise_threshold;
-	u8 movfilter;
-	u8 blen;
-
-	if (!mxt224_enabled) {
-		printk(KERN_ERR"[TSP] mxt224_enabled is 0\n");
-		return;
-	}
-
-	if (ta_status) {
-		if (copy_data->family_id==0x81){
-//			calcfg = 112;
-			value = t48_config_e_ta[3];
-			register_address=2;
-			ret = get_object_info(copy_data, PROCG_NOISESUPPRESSION_T48, &size_one, &obj_address);
-			write_mem(copy_data, obj_address+(u16)register_address, 1, &value);
-
-			write_mem(copy_data, obj_address, size_one, &t48_config_e_ta[1]);
-
-			value = t48_config_e_ta[3] | 0x20;
-			write_mem(copy_data, obj_address+(u16)register_address, 1, &value);
-		}
-		else{
-		threshold = 70;
-		threshold_e = 70;
-		noise_threshold = 40;
-		movfilter = 46;
-		blen = 16;
-		}
-
-	} else {
-		if (copy_data->family_id==0x81){
-//			calcfg = 80;
-			value = t48_config_e[3];
-			register_address=2;
-			ret = get_object_info(copy_data, PROCG_NOISESUPPRESSION_T48, &size_one, &obj_address);
-			write_mem(copy_data, obj_address+(u16)register_address, 1, &value);
-
-			write_mem(copy_data, obj_address, size_one, &t48_config_e[1]);
-
-			value = t48_config_e[3] | 0x20;
-			write_mem(copy_data, obj_address+(u16)register_address, 1, &value);
-		}
-		else{
-		    if (boot_or_resume==1)
-				threshold = 55;
-			else
-			    threshold = 40;
-			threshold_e = 50;
-			noise_threshold = 30;
-			movfilter = 11;
-			blen = 32;
-		}
-	}
-#if 0
-	if (copy_data->family_id==0x81) {
-
-
-		value = calcfg;
-		register_address=2;
-		ret = get_object_info(copy_data, PROCG_NOISESUPPRESSION_T48, &size_one, &obj_address);
-		size_one = 1;
-		write_mem(copy_data, obj_address+(u16)register_address, size_one, &value);
-		read_mem(copy_data, obj_address+(u16)register_address, (u8)size_one, &val);
-		printk(KERN_ERR"[TSP]TA_probe MXT224E T%d Byte%d is %d\n",48,register_address,val);
-	} else {
-#endif
-	if (copy_data->family_id==0x80) {
-		ret = get_object_info(copy_data, TOUCH_MULTITOUCHSCREEN_T9, &size_one, &obj_address);
-		size_one = 1;
-		value = (u8)threshold;
-		write_mem(copy_data, obj_address+(u16)register_address, size_one, &value);
-		read_mem(copy_data, obj_address+(u16)register_address, (u8)size_one, &val);
-		printk(KERN_ERR"[TSP]TA_probe MXT224 T%d Byte%d is %d\n", 9, register_address, val);
-
-		value = (u8)movfilter;
-		register_address=13;
-		write_mem(copy_data, obj_address+(u16)register_address, size_one, &value);
-		read_mem(copy_data, obj_address+(u16)register_address, (u8)size_one, &val);
-		printk(KERN_ERR"[TSP]TA_probe MXT224 T%d Byte%d is %d\n", 9, register_address, val);
-
-		value = noise_threshold;
-		register_address = 8;
-		ret = get_object_info(copy_data, PROCG_NOISESUPPRESSION_T22, &size_one, &obj_address);
-		size_one = 1;
-		write_mem(copy_data, obj_address+(u16)register_address, size_one, &value);
-		read_mem(copy_data, obj_address+(u16)register_address, (u8)size_one, &val);
-		printk(KERN_ERR"[TSP]TA_probe MXT224 T%d Byte%d is %d\n", 22, register_address, val);
-	}
-
-};
-*/
 void check_chip_calibration(unsigned char one_touch_input_flag)
 {
 	u8 data_buffer[100] = { 0 };
@@ -763,23 +620,12 @@ void check_chip_calibration(unsigned char one_touch_input_flag)
 
 		/* write_mem(command_processor_address + DIAGNOSTIC_OFFSET, 1, &data_byte); */
 		write_mem(copy_data, copy_data->cmd_proc + CMD_DIAGNOSTIC_OFFSET, 1, &data_byte);
-#ifdef CONFIG_TARGET_LOCALE_NA
-		if ((tch_ch + atch_ch) >= 20){
-			printk(KERN_ERR"[TSP]touch ch + anti ch > 14\n");
-			calibrate_chip();
-			qt_timer_state = 0;
-			qt_time_point = jiffies_to_msecs(jiffies);
-			not_yet_count=0;
-		}
-		else if ((tch_ch > 0) && (atch_ch == 0)) {
-#else
+
+
 		/* process counters and decide if we must re-calibrate or if cal was good */
 		if ((tch_ch > 0) && (atch_ch == 0)) {  /* jwlee change. */
-#endif
 			/* cal was good - don't need to check any more */
-#if defined CONFIG_TARGET_LOCALE_NA
-		   not_yet_count=0;
-#endif
+			/* hugh 0312 */
            if(auto_cal_flag == 0) {
 				data_byte = 5;
 				ret = get_object_info(copy_data, GEN_ACQUISITIONCONFIG_T8, &size, &object_address);
@@ -860,30 +706,19 @@ void check_chip_calibration(unsigned char one_touch_input_flag)
 				cal_check_flag = 1;
 			}
 
-		} else if (atch_ch >= 5) {
+		} else if (atch_ch >= 5) {     /* jwlee add 0325 */
 			/* cal was bad - must recalibrate and check afterwards */
 			printk(KERN_ERR"[TSP] calibration was bad\n");
 			calibrate_chip();
 			qt_timer_state = 0;
-#if defined CONFIG_TARGET_LOCALE_NA
-			not_yet_count=0;
-#endif
 			qt_time_point = jiffies_to_msecs(jiffies);
 		} else {
 			/* we cannot confirm if good or bad - we must wait for next touch  message to confirm */
 			printk(KERN_ERR"[TSP] calibration was not decided yet\n");
 			cal_check_flag = 1u;
 			/* Reset the 100ms timer */
-			qt_timer_state = 0;
+			qt_timer_state = 0;/* 0430 hugh 1 --> 0 */
 			qt_time_point = jiffies_to_msecs(jiffies);
-#if defined CONFIG_TARGET_LOCALE_NA
-			not_yet_count++;
-			if(not_yet_count>10)
-			{
-				not_yet_count = 0;
-				calibrate_chip();
-			}
-#endif
 		}
 
 	}
@@ -1169,14 +1004,6 @@ static void report_input_data(struct mxt224_data *data)
 			printk(KERN_ERR "[TSP] Dn[%d] %4d,%4d\n", i, data->fingers[i].x, data->fingers[i].y);
 		*/
 #endif
-#ifdef CONFIG_TARGET_LOCALE_NA
-		if (touch_is_pressed_arr[i]==0)
-			printk(KERN_ERR "[TSP] Up[%d] %4d,%4d\n", i, data->fingers[i].x, data->fingers[i].y);
-		else if (touch_is_pressed_arr[i]==1)
-			printk(KERN_ERR "[TSP] Dn[%d] %4d,%4d\n", i, data->fingers[i].x, data->fingers[i].y);
-
-#endif
-
 		if (data->fingers[i].z == 0)
 			data->fingers[i].z = -1;
 	}
@@ -1304,7 +1131,7 @@ static irqreturn_t mxt224_irq_thread(int irq, void *ptr)
 				/* printk(KERN_ERR"[TSP] palm error msg[1] is %d!!!\n",msg[1]); */
 			}
 		}
-
+		
 		if (msg[0] == 0xf) { /* freq error release */
 			printk(KERN_ERR"[TSP] Starting irq with 0x%2x, 0x%2x, 0x%2x, 0x%2x, 0x%2x, 0x%2x, 0x%2x, 0x%2x", msg[0], msg[1], msg[2], msg[3], msg[4], msg[5], msg[6], msg[7]);
 			if ((msg[1]&0x08) == 0x08)
@@ -1426,12 +1253,10 @@ static irqreturn_t mxt224_irq_thread(int irq, void *ptr)
 		check_chip_calibration(1);
 	}
 
-#if !defined(CONFIG_TARGET_LOCALE_NA)
-	if (!optiacl_gain) {
+	if ((!optiacl_gain)&&(data->family_id != 0x81)) {
 		mxt224_optical_gain(QT_REFERENCE_MODE);
 		optiacl_gain = 1;
 	}
-#endif
 
 	return IRQ_HANDLED;
 }
@@ -1439,67 +1264,42 @@ static irqreturn_t mxt224_irq_thread(int irq, void *ptr)
 static int mxt224_internal_suspend(struct mxt224_data *data)
 {
 	int i;
-    int ret = 0;
-#ifdef CONFIG_TARGET_LOCALE_NA
-	static const u8 sleep_power_cfg[3];
-	bool ta_status = 0;
-	data->read_ta_status(&ta_status);
 
-	if (ta_status) {
-		printk(KERN_ERR"[TSP] sleep \n");
-		for (i = 0; i < data->num_fingers; i++) {
-			if (data->fingers[i].z == -1)
-				continue;
+	/*ret = write_config(data, GEN_POWERCONFIG_T7, sleep_power_cfg);
+	if (ret)
+		return ret;*/
 
-			touch_is_pressed_arr[i] = 0;
-			data->fingers[i].z = 0;
-		}
-		report_input_data(data);
 
-		ret = write_config(data, GEN_POWERCONFIG_T7, sleep_power_cfg);
-		sleep_mode_flag = 1;
-	}else{
-#endif /* CONFIG_TARGET_LOCALE_NA */
-		for (i = 0; i < data->num_fingers; i++) {
-			if (data->fingers[i].z == -1)
-				continue;
+	for (i = 0; i < data->num_fingers; i++) {
+		if (data->fingers[i].z == -1)
+			continue;
 
-			touch_is_pressed_arr[i] = 0;
-			data->fingers[i].z = 0;
-		}
-		report_input_data(data);
-
-		data->power_off();
-#ifdef CONFIG_TARGET_LOCALE_NA
+		touch_is_pressed_arr[i] = 0;
+		data->fingers[i].z = 0;
 	}
-#endif /* CONFIG_TARGET_LOCALE_NA */
-	return ret;
+	report_input_data(data);
+
+	data->power_off();
+
+	return 0;
 }
 
 static int mxt224_internal_resume(struct mxt224_data *data)
 {
 	int ret = 0;
-#ifdef CONFIG_TARGET_LOCALE_NA
-        int i = 0;
-	bool ta_status = 0;
-	data->read_ta_status(&ta_status);
-	if (sleep_mode_flag) {
-		printk(KERN_ERR"[TSP] sleep wake up\n");
-		do {
-			ret = write_config(data, GEN_POWERCONFIG_T7, data->power_cfg);
-			msleep(20);
-			i++;
-		} while (ret && i < 10);
+	/*int i;*/
+
+	data->power_on();
+
+	/*i = 0;
+	do {
+		ret = write_config(data, GEN_POWERCONFIG_T7, data->power_cfg);
 		msleep(20);
-		boot_or_resume = 1;
-		sleep_mode_flag = 0;
-	}else{
-#endif /* CONFIG_TARGET_LOCALE_NA */
-		data->power_on();
-		boot_or_resume = 1;
-#ifdef CONFIG_TARGET_LOCALE_NA
-	}
-#endif /* CONFIG_TARGET_LOCALE_NA */
+		i++;
+	} while (ret && i < 10);
+	msleep(20);*/
+	boot_or_resume = 1;
+
 	return ret;
 }
 
@@ -1511,57 +1311,17 @@ static void mxt224_early_suspend(struct early_suspend *h)
 {
 	struct mxt224_data *data = container_of(h, struct mxt224_data,
 								early_suspend);
-
-#ifdef CONFIG_MACH_C1_NA_SPR_EPIC2_REV00
-	int i;
-
-	printk("[TSP] %s\n", __func__);
-	if (data->read_ta_status)
-		data->read_ta_status(&suspend_ta_status);
 	mxt224_enabled = 0;
 	touch_is_pressed = 0;
-	disable_irq(data->client->irq);
-
-	for (i = 0; i < data->num_fingers; i++) {
-		if (data->fingers[i].z == -1)
-			continue;
-		touch_is_pressed_arr[i] = 0;
-		data->fingers[i].z = 0;
-	}
-	report_input_data(data);
-
-	data->power_off();
-#else
-	mxt224_enabled = 0;
-	touch_is_pressed = 0;
-	qt_timer_state = 0;
-#if defined CONFIG_TARGET_LOCALE_NA
-	not_yet_count = 0;
-#endif
 	disable_irq(data->client->irq);
 	mxt224_internal_suspend(data);
-#endif
 }
 
 static void mxt224_late_resume(struct early_suspend *h)
 {
+	bool ta_status = 0;
 	struct mxt224_data *data = container_of(h, struct mxt224_data,
 								early_suspend);
-	bool ta_status = 0;
-
-#ifdef CONFIG_MACH_C1_NA_SPR_EPIC2_REV00
-	data->power_on();
-	boot_or_resume = 1;
-	mxt224_enabled = 1;
-	enable_irq(data->client->irq);
-
-	if (data->read_ta_status) {
-		data->read_ta_status(&ta_status);
-		printk("[TSP] %s, ta_status = %d\n", __func__, ta_status);
-			mxt224_ta_probe(ta_status);
-	}
-	calibrate_chip();
-#else
 	mxt224_internal_resume(data);
 	enable_irq(data->client->irq);
 
@@ -1569,13 +1329,13 @@ static void mxt224_late_resume(struct early_suspend *h)
 #ifdef CONFIG_TARGET_LOCALE_KOR
 	is_inputmethod = 0;
 #endif
+	msleep(100);
 	if (data->read_ta_status) {
 		data->read_ta_status(&ta_status);
 		printk(KERN_ERR "[TSP] ta_status is %d", ta_status);
 		mxt224_ta_probe(ta_status);
 	}
 	calibrate_chip();
-#endif /* CONFIG_MACH_C1_NA_SPR_EPIC2_REV00 */
 }
 #else
 static int mxt224_suspend(struct device *dev)
@@ -1674,8 +1434,7 @@ static ssize_t qt602240_object_setting(struct device *dev,
 	read_mem(data, address+(u16)object_register, (u8)size, &val);
 
 	printk(KERN_ERR "[TSP] T%d Byte%d is %d\n", object_type, object_register, val);
-	/*test program*/
-	mxt224_ta_probe(1);
+
 	return count;
 
 }
@@ -1710,11 +1469,7 @@ struct device *qt602240_noise_test;
 /*
 	botton_right, botton_left, center, top_right, top_left
 */
-#ifdef CONFIG_MACH_C1_NA_SPR_EPIC2_REV00
-unsigned char test_node[5] = {196, 188, 104, 20, 12};
-#else
 unsigned char test_node[5] = {12, 20, 104, 188, 196};
-#endif
 uint16_t qt_refrence_node[209] = { 0 };
 uint16_t qt_delta_node[209] = { 0 };
 
@@ -1944,6 +1699,7 @@ int read_all_delta_data(uint16_t dbg_mode)
 	return state;
 }
 
+
 static void mxt224_optical_gain(uint16_t dbg_mode)
 {
 	u8 read_page, read_point;
@@ -1987,26 +1743,9 @@ static void mxt224_optical_gain(uint16_t dbg_mode)
 			read_mem(copy_data, object_address+(u16)read_point, 2, data_buffer);
 			qt_refrence = ((uint16_t)data_buffer[1]<<8) + (uint16_t)data_buffer[0];
 
-#if defined(CONFIG_TARGET_LOCALE_NAATT)
-			if (copy_data->family_id == 0x81) {
-				if (qt_refrence != 0)
-					qt_refrence = qt_refrence - 16384;
-
-				if (qt_refrence > 13280) {
-					reference_over = 1;
-					printk(KERN_DEBUG "[TSP] reference value beyond 13280\n");
-				}
-
-			} else {
-				if (qt_refrence > 14500)
-					reference_over = 1;
-			}
-#else
-			if (copy_data->family_id == 0x81)
-				qt_refrence = qt_refrence - 16384;
 			if (qt_refrence > 14500)
 				reference_over = 1;
-#endif
+
 			if ((read_page == 3) && (node == 16))
 				break;
 		}
@@ -2014,11 +1753,6 @@ static void mxt224_optical_gain(uint16_t dbg_mode)
 		msleep(5);
 	}
 
-#if defined(CONFIG_TARGET_LOCALE_NAATT)
-	if (reference_over) {
-		gain_ta = 0;
-	}
-#else
 	if (reference_over)
 		gain = 16;
 	else
@@ -2030,7 +1764,6 @@ static void mxt224_optical_gain(uint16_t dbg_mode)
 	write_mem(copy_data, object_address+(u16)register_address, size_one, &value);
 	read_mem(copy_data, object_address+(u16)register_address, (u8)size_one, &val);
 
-#endif
 	printk(KERN_ERR "[TSP] -mxt224_optical_gain()\n");
 };
 
@@ -2418,15 +2151,16 @@ static ssize_t set_module_on_show(struct device *dev, struct device_attribute *a
 #ifdef CONFIG_MACH_C1_NA_SPR_EPIC2_REV00
 	data->power_on();
 	boot_or_resume = 1;
+	calibrate_chip();
 	mxt224_enabled = 1;
 	enable_irq(data->client->irq);
 
 	if (data->read_ta_status) {
 		data->read_ta_status(&ta_status);
 		printk("[TSP] %s, ta_status = %d\n", __func__, ta_status);
+		if ((ta_status) || (suspend_ta_status))
 			mxt224_ta_probe(ta_status);
 	}
-	calibrate_chip();
 #else
 	mxt224_internal_resume(data);
 	enable_irq(data->client->irq);
@@ -2596,56 +2330,38 @@ ssize_t set_tsp_for_inputmethod_store(struct device *dev, struct device_attribut
 	int ret;
 	u8 value;
 	int jump_limit = 0;
-	int mrgthr = 0;
 	u8 val = 0;
-	unsigned int register_address = 0;
+	unsigned int register_address = 30;
 
 	if (!mxt224_enabled) {
 		printk(KERN_ERR "[TSP ]set_tsp_for_inputmethod_store. mxt224_enabled is 0\n");
-		return 1;
+		return;
 	}
 
 	if (*buf == '1' && (!is_inputmethod)) {
 		is_inputmethod = 1;
 		jump_limit = 10;
-		mrgthr = 5;
 		printk(KERN_ERR "[TSP] Set TSP inputmethod IN\n");
 
-
-		ret = get_object_info(copy_data, TOUCH_MULTITOUCHSCREEN_T9, &size_one, &obj_address);
-		register_address = 16;
-		value = (u8)mrgthr;
-		size_one = 1;
-		write_mem(copy_data, obj_address+(u16)register_address, size_one, &value);
-		read_mem(copy_data, obj_address+(u16)register_address, (u8)size_one, &val);
-		printk(KERN_ERR "T%d Byte%d is %d\n", 9, register_address, val);
-
-		register_address = 30;
 		value = (u8)jump_limit;
+		ret = get_object_info(copy_data, TOUCH_MULTITOUCHSCREEN_T9, &size_one, &obj_address);
 		size_one = 1;
 		write_mem(copy_data, obj_address+(u16)register_address, size_one, &value);
 		read_mem(copy_data, obj_address+(u16)register_address, (u8)size_one, &val);
 		printk(KERN_ERR "T%d Byte%d is %d\n", 9, register_address, val);
+
 	} else if (*buf == '0' && (is_inputmethod)) {
 		is_inputmethod = 0;
-		jump_limit	= 18;
-		mrgthr = 40;
+		jump_limit  = 18;
+
 		printk(KERN_ERR "[TSP] Set TSP inputmethod OUT\n");
 
-		ret = get_object_info(copy_data, TOUCH_MULTITOUCHSCREEN_T9, &size_one, &obj_address);
-		register_address = 16;
-		value = (u8)mrgthr;
-		size_one = 1;
-		write_mem(copy_data, obj_address+(u16)register_address, size_one, &value);
-		read_mem(copy_data, obj_address+(u16)register_address, (u8)size_one, &val);
-		printk(KERN_ERR "T%d Byte%d is %d\n", 9, register_address, val);
-
-		register_address = 30;
 		value = (u8)jump_limit;
+		ret = get_object_info(copy_data, TOUCH_MULTITOUCHSCREEN_T9, &size_one, &obj_address);
 		size_one = 1;
 		write_mem(copy_data, obj_address+(u16)register_address, size_one, &value);
 		read_mem(copy_data, obj_address+(u16)register_address, (u8)size_one, &val);
-		printk(KERN_ERR "T%d Byte%d is %d\n", 9, register_address, val);
+		printk(KERN_ERR "[TSP] T%d Byte%d is %d\n", 9, register_address, val);
 	}
 
 	return 1;
@@ -2946,10 +2662,6 @@ static int __devinit mxt224_probe(struct i2c_client *client, const struct i2c_de
 	u16 obj_address;
 	u8 value;
 
-	#if defined(CONFIG_TARGET_LOCALE_NAATT)
-	int gain_ta_pre;
-	#endif
-
 	touch_is_pressed = 0;
 
 	if (!pdata) {
@@ -3037,13 +2749,8 @@ static int __devinit mxt224_probe(struct i2c_client *client, const struct i2c_de
 	} else if (data->family_id == 0x81)  {	/* tsp_family_id - 0x81 : MXT-224E */
 		tsp_config = pdata->config_e;
 		printk(KERN_ERR "[TSP] TSP chip is MXT224-E\n");
-#if defined CONFIG_TARGET_LOCALE_NA
 		atchcalst = 4;/*9*/
 		atchcalsthr = 35;/*35*/
-#else
-		atchcalst = 8;/*9*/
-		atchcalsthr = 8;/*35*/
-#endif
 		get_object_info(data, SPT_USERDATA_T38, &size_one, &obj_address);
 		size_one = 1;
 		read_mem(data, obj_address, (u8)size_one, &user_info_value);
@@ -3111,29 +2818,6 @@ static int __devinit mxt224_probe(struct i2c_client *client, const struct i2c_de
 
 	msleep(60);
 	mxt224_enabled = 1;
-
-#if defined(CONFIG_TARGET_LOCALE_NAATT)
-	mxt224_ta_probe(1);
-	ret = get_object_info(data, PROCG_NOISESUPPRESSION_T48, &size_one, &obj_address);
-	read_mem(data, obj_address+34, 1, &gain_ta);
-	printk(KERN_DEBUG "[TSP]TA_probe MXT224E T%d Byte%d is %d\n", 48, 34, gain_ta);
-	gain_ta_pre = gain_ta;
-	mxt224_optical_gain(QT_REFERENCE_MODE);
-	if (gain_ta_pre != gain_ta) {
-		printk(KERN_DEBUG "[TSP] change gain value to %d for TA mode\n", gain_ta);
-		gain_change_flag = 1;
-	}
-	mxt224_ta_probe(0);
-#endif
-
-#if 0
-	value = t48_config_e[3] | 0x20;
-	register_address=2;
-	ret = get_object_info(copy_data, PROCG_NOISESUPPRESSION_T48, &size_one, &obj_address);
-	size_one = 1;
-	write_mem(copy_data, obj_address+(u16)register_address, size_one, &value);
-#endif
-
 	if (data->read_ta_status) {
 		data->read_ta_status(&ta_status);
 		printk(KERN_ERR "[TSP] ta_status is %d", ta_status);
@@ -3247,11 +2931,7 @@ if (device_create_file(sec_touchscreen, &dev_attr_mxt_touchtype) < 0)
 		printk(KERN_ERR "Failed to create device file(%s)!\n", dev_attr_set_firm_version.attr.name);
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
-#if defined(CONFIG_TARGET_LOCALE_NA) || defined(CONFIG_TARGET_LOCALE_NAATT)
-	data->early_suspend.level = EARLY_SUSPEND_LEVEL_DISABLE_FB +1;//EARLY_SUSPEND_LEVEL_BLANK_SCREEN + 1;
-#else
 	data->early_suspend.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN + 1;
-#endif
 	data->early_suspend.suspend = mxt224_early_suspend;
 	data->early_suspend.resume = mxt224_late_resume;
 	register_early_suspend(&data->early_suspend);
