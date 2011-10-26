@@ -5,9 +5,7 @@
 #include "gpio-c1-rev02.h"
 #elif defined(CONFIG_MACH_C1Q1_REV02)
 #include "gpio-c1q1-rev02.h"
-#elif defined(CONFIG_MACH_Q1_REV00)
-#include "gpio-p6-rev00.h"
-#elif defined(CONFIG_MACH_Q1_REV02)
+#elif defined(CONFIG_MACH_P6_REV02)
 #include "gpio-p6-rev02.h"
 #elif defined(CONFIG_MACH_TALBOT_REV02)
 #include "gpio-talbot-rev02.h"
