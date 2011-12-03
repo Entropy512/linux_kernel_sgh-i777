@@ -303,6 +303,7 @@ static irqreturn_t mshci_s3c_gpio_card_detect_isr(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
+
 static int __devinit mshci_s3c_probe(struct platform_device *pdev)
 {
 	struct s3c_mshci_platdata *pdata = pdev->dev.platform_data;
@@ -527,23 +528,14 @@ static int __devexit mshci_s3c_remove(struct platform_device *pdev)
 static int mshci_s3c_suspend(struct platform_device *dev, pm_message_t pm)
 {
 	struct mshci_host *host = platform_get_drvdata(dev);
-	struct s3c_mshci_platdata *pdata = dev->dev.platform_data;
 
 	mshci_suspend_host(host, pm);
-
-	if(pdata->set_power)
-		pdata->set_power(dev, 0);
-
 	return 0;
 }
 
 static int mshci_s3c_resume(struct platform_device *dev)
 {
 	struct mshci_host *host = platform_get_drvdata(dev);
-	struct s3c_mshci_platdata *pdata = dev->dev.platform_data;
-
-	if(pdata->set_power)
-		pdata->set_power(dev, 1);
 
 	mshci_resume_host(host);
 	return 0;
