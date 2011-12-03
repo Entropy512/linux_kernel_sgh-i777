@@ -25,15 +25,7 @@ obj-$(CONFIG_SND_SAMSUNG_SOC_I2S_V5) += snd-soc-s3c-dma-wrapper.o
 obj-$(CONFIG_SND_SAMSUNG_SOC_I2S_V5) += snd-soc-s5p-i2s_sec.o
 obj-$(CONFIG_SND_SAMSUNG_SOC_SPDIF) += snd-soc-samsung-spdif.o
 obj-$(CONFIG_SND_S5P_RP) += s5p-rp.o
-ifeq ($(CONFIG_TARGET_LOCALE_NAATT),y)
-obj-$(CONFIG_SND_S5P_RP) += s5p-rp_fw_att.o
-else
-ifeq ($(CONFIG_TARGET_LOCALE_NA),y)
-obj-$(CONFIG_SND_S5P_RP) += s5p-rp_fw_spr.o
-else
 obj-$(CONFIG_SND_S5P_RP) += s5p-rp_fw.o
-endif
-endif
 
 # S3C24XX Machine Support
 snd-soc-jive-wm8750-objs := jive_wm8750.o

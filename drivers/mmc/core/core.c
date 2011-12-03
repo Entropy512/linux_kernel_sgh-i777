@@ -233,22 +233,6 @@ void mmc_wait_for_req(struct mmc_host *host, struct mmc_request *mrq)
 
 	mmc_start_request(host, mrq);
 
-#ifdef CONFIG_TARGET_LOCALE_NAATT
-    if ((host->card != NULL) && host->card->type == MMC_TYPE_SD) {
-		   if (mrq->cmd->error || ( mrq->cmd->data && \
-				   mrq->cmd->data->error )) {
-				   if (mmc_card_highspeed(host->card)) {
-						   /* this fail might come from high speed
-							  this card can not support high speed */
-						   host->card->state &= ~MMC_STATE_HIGHSPEED;;
-						   /* for next time, after suspend/resume. */
-						   host->caps &= ~ MMC_CAP_SD_HIGHSPEED;
-						   mmc_set_clock(host, 25000000);
-				    }
-	        }
-    }
-
-#endif
 	wait_for_completion(&complete);
 
 #ifdef CONFIG_MACH_C1
@@ -1435,7 +1419,7 @@ int mmc_can_trim(struct mmc_card *card)
 		if (mmc_card_mmc(card) &&
 			(card->ext_csd.sec_feature_support & EXT_CSD_SEC_GB_CL_EN) &&
 			(card->host->caps & MMC_CAP_ERASE) &&
-			(card->csd.cmdclass & CCC_ERASE) && card->erase_size)
+	  		(card->csd.cmdclass & CCC_ERASE) && card->erase_size)
 			return 1;
 	}
 #else
@@ -1711,7 +1695,7 @@ int mmc_suspend_host(struct mmc_host *host)
 	mmc_bus_put(host);
 
 	if (!err && !(host->pm_flags & MMC_PM_KEEP_POWER))
-		if (!host->card || host->card->type != MMC_TYPE_SDIO)
+		if (!host->card || host->card->type != MMC_TYPE_SDIO) 
 			mmc_power_off(host);
 
 	return err;
@@ -1736,7 +1720,7 @@ int mmc_resume_host(struct mmc_host *host)
 
 	if (host->bus_ops && !host->bus_dead) {
 		if (!(host->pm_flags & MMC_PM_KEEP_POWER)) {
-			if (!host->card || host->card->type != MMC_TYPE_SDIO)
+			if (!host->card || host->card->type != MMC_TYPE_SDIO) 
 				mmc_power_up(host);
 			mmc_select_voltage(host, host->ocr);
 		}
