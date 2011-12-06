@@ -771,8 +771,8 @@ static int s5pv310_enter_core0_aftr(struct cpuidle_device *dev,
 	int idle_time;
 	unsigned long tmp;
 
-	pr_info("++%s\n", __func__);
 #ifdef AFTR_DEBUG
+	pr_info("++%s\n", __func__);
 	/* ON */
 	gpio_set_value(S5PV310_GPX1(6), 0);
 	gpio_set_value(S5PV310_GPX1(7), 0);
@@ -884,7 +884,9 @@ early_wakeup:
 	idle_time = (after.tv_sec - before.tv_sec) * USEC_PER_SEC +
 		    (after.tv_usec - before.tv_usec);
 
+#ifdef AFTR_DEBUG
 	pr_info("--%s\n", __func__);
+#endif
 	return idle_time;
 }
 
