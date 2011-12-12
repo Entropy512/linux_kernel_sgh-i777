@@ -110,6 +110,13 @@ struct input_absinfo {
 #define SYN_MT_REPORT		2
 
 /*
+ * To Support Surface(Shape) Touch
+ */
+#if 0
+#define _SUPPORT_SHAPE_TOUCH_
+#endif
+
+/*
  * Keys and buttons
  *
  * Most of the keys/buttons are modeled after USB HUT 1.12
@@ -705,7 +712,7 @@ struct input_absinfo {
 #define ABS_MT_BLOB_ID		0x38	/* Group a set of packets as a blob */
 #define ABS_MT_TRACKING_ID	0x39	/* Unique ID of initiated contact */
 #define ABS_MT_PRESSURE		0x3a	/* Pressure on contact area */
-#ifdef CONFIG_SHAPE_TOUCH
+#ifdef _SUPPORT_SHAPE_TOUCH_
 #define ABS_MT_COMPONENT         0x3b    /* Component value */
 #endif
 
