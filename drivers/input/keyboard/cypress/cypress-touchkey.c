@@ -85,7 +85,6 @@ static int touchkey_keycode[3] = { 0, KEY_MENU, KEY_BACK };
 bool bln_enabled = false;
 bool BLN_ongoing = false;
 bool bln_blink_enabled = false;
-bool bln_suspended = false;
 
 static void enable_led_notification(void);
 static void disable_led_notification(void);
@@ -1030,50 +1029,66 @@ static int melfas_touchkey_late_resume(struct early_suspend *h)
 
 static void touchkey_activate(void){
 
-        if( !wake_lock_active(&bln_wake_lock) ){ 
-            printk(KERN_DEBUG "[TouchKey] touchkey get wake_lock\n");
-            wake_lock(&bln_wake_lock);
-        }
+        printk(KERN_DEBUG "[TouchKey] touchkey get wake_lock");
+        wake_lock(&bln_wake_lock);
 
-        printk(KERN_DEBUG "[TouchKey] touchkey activate.\n");
+        printk(KERN_DEBUG "[TouchKey] touchkey activate.");
         touchkey_ldo_on(1);
 
+#if 0
+	gpio_direction_output(_3_GPIO_TOUCH_EN, 1);
+	gpio_direction_output(_3_TOUCH_SDA_28V, 1);
+	gpio_direction_output(_3_TOUCH_SCL_28V, 1);
+	gpio_direction_output(_3_GPIO_TOUCH_INT, 1);
+
+	set_irq_type(IRQ_TOUCH_INT, IRQF_TRIGGER_FALLING);
+	s3c_gpio_cfgpin(_3_GPIO_TOUCH_INT, _3_GPIO_TOUCH_INT_AF);
+	s3c_gpio_setpull(_3_GPIO_TOUCH_INT, S3C_GPIO_PULL_NONE);
+#endif
         msleep(50);
 	touchkey_led_ldo_on(1);
 
         touchkey_enable = 1;
 }
 
-static void touchkey_deactivate(void){
+static void enable_disable_vmipi_1_1(int enable){
+    struct regulator *regulator;
+    int ret = 0;
 
-        touchkey_led_ldo_on(0);
-        touchkey_ldo_on(0);
+    regulator = regulator_get(NULL,"vmipi_1.1v");
+    if(IS_ERR(regulator))
+        goto err_out;
 
-        if( wake_lock_active(&bln_wake_lock) ){
-            printk(KERN_DEBUG "[TouchKey] touchkey clear wake_lock\n");
-            wake_unlock(&bln_wake_lock);
+    if( enable ){
+        /* VMIPI_1.1V */
+        if(!regulator_is_enabled(regulator)){
+            printk(KERN_ERR "[TouchKey] vmipi1.1v power on\n");
+            ret = regulator_enable(regulator);
         }
+    }else{
+        if(regulator_is_enabled(regulator)){
+            printk(KERN_ERR "[TouchKey] vmipi1.1v power off\n");
+            regulator_force_disable(regulator);
+        }
+    }
+    regulator_put(regulator);
 
-        touchkey_enable = 0;
+    return;
+err_out:
+    printk(KERN_ERR "[TouchKey] vmipi1.1v regulator get error\n");
+    
 }
 
 static void bln_early_suspend(struct early_suspend *h){
-
-        printk(KERN_DEBUG "[TouchKey] BLN suspend\n");
-        bln_suspended = true;
-
+    printk(KERN_DEBUG "[TouchKey] BLN suspend\n");
 }
 
 static void bln_late_resume(struct early_suspend *h){
-
-        printk(KERN_DEBUG "[TouchKey] BLN resume\n");
-
-        bln_suspended = false;
-        if( wake_lock_active(&bln_wake_lock) ){
-            printk(KERN_DEBUG "[TouchKey] clear wake lock \n");
-            wake_unlock(&bln_wake_lock);
-        }
-
+    printk(KERN_DEBUG "[TouchKey] BLN resume\n");
+    if( touchkey_enable == 1 ){
+        printk(KERN_DEBUG "[TouchKey] clear wake lock \n");
+        wake_unlock(&bln_wake_lock);
+    }
 }
 
 static struct early_suspend bln_suspend_data = {
@@ -1098,12 +1113,9 @@ static void enable_led_notification(void){
 
         if( bln_enabled ){
             if( touchkey_enable != 1 ){
-                if( bln_suspended ){
-                    touchkey_activate();
-                }
+                touchkey_activate();
             }
             if( touchkey_enable == 1 ){
-                printk(KERN_DEBUG "[TouchKey] BLN_ongoing set to true\n");
                 BLN_ongoing = true;
                 enable_touchkey_backlights();
             }
@@ -1115,13 +1127,9 @@ static void disable_led_notification(void){
 
         bln_blink_enabled = false;
         BLN_ongoing = false;
-        printk(KERN_DEBUG "[TouchKey] BLN_ongoing set to false\n");
 
         if( touchkey_enable == 1 ){
             disable_touchkey_backlights();
-            if( bln_suspended ){
-                touchkey_deactivate();
-            }
         }
 
 }
@@ -1147,8 +1155,7 @@ static ssize_t bln_status_write( struct device *dev, struct device_attribute *at
                 }
 
             }else{
-                /* error */
-            }
+                /* error */ }
         }else{
             /* error */
         }
