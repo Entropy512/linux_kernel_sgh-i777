@@ -241,10 +241,8 @@ signed char fDetectHiLoTransition(void)
 	// Generate clocks for the target to pull SDATA High
 	//dog_kick();
 	iTimer = TRANSITION_TIMEOUT;
-#if !defined(CONFIG_TARGET_LOCALE_NAATT)
 	printk(KERN_DEBUG
 	       "Generate clocks for the target to pull SDATA High\n");
-#endif
 	while (1) {
 		SCLKLow();
 		if (fSDATACheck())	// exit once SDATA goes HI
@@ -258,10 +256,8 @@ signed char fDetectHiLoTransition(void)
 	//dog_kick();
 	// Generate Clocks and wait for Target to pull SDATA Low again
 	iTimer = TRANSITION_TIMEOUT;	// reset the timeout counter
-#if !defined(CONFIG_TARGET_LOCALE_NAATT)
 	printk(KERN_DEBUG
 	       "Generate Clocks and wait for Target to pull SDATA Low again\n");
-#endif
 	while (1) {
 		SCLKLow();	//issp_test_20100709 unblock
 		if (!fSDATACheck()) {	// exit once SDATA returns LOW
@@ -273,9 +269,7 @@ signed char fDetectHiLoTransition(void)
 			return (ERROR);
 		}
 	}
-#if !defined(CONFIG_TARGET_LOCALE_NAATT)
 	printk(KERN_ERR"fDetectHiLoTransition OUT!!!!\n");
-#endif
 	return (PASS);
 }
 
@@ -360,9 +354,6 @@ signed char fPowerCycleInitializeTargetForISSP(unsigned long flag)
 	SetSCLKHiZ();
 //    printk(KERN_DEBUG "fDetectHiLoTransition\n");
 	if ((fIsError = fDetectHiLoTransition())) {
-#if defined(CONFIG_TARGET_LOCALE_NAATT)
-		local_irq_restore(flag);
-#endif
 		printk(KERN_ERR"[TOUCHKEY]fDetectHiLoTransition()error!!!\n");
 		return (INIT_ERROR);
 	}
@@ -382,9 +373,6 @@ signed char fPowerCycleInitializeTargetForISSP(unsigned long flag)
 //    printk("SendVector(id_setup_1)\n",0,0,0);
 	SendVector(id_setup_1, num_bits_id_setup_1);
 	if ((fIsError = fDetectHiLoTransition())) {
-#if defined(CONFIG_TARGET_LOCALE_NAATT)
-		local_irq_restore(flag);
-#endif
 		printk(KERN_ERR"[TOUCHKEY]fDetectHiLoTransition()error!!!\n");
 		return (INIT_ERROR);
 	}
