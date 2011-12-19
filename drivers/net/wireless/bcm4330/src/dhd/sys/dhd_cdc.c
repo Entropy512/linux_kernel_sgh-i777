@@ -579,7 +579,7 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
 	int arp_ol = 0xf;
 	int scan_assoc_time = 40;
 	int scan_unassoc_time = 80;
-	int assoc_retry = 7;
+	int assoc_retry = 3;
 	char buf[256];
 #ifdef USE_WIFI_DIRECT
 	uint32 apsta = 1; /* Enable APSTA mode */
