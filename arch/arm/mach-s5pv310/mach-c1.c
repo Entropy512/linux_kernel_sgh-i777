@@ -3080,15 +3080,15 @@ static const u8 *mxt224_config[] = {
 
 #if defined(CONFIG_TARGET_LOCALE_NAATT)
 static u8 t7_config_e[] = {GEN_POWERCONFIG_T7,
-				32, 255, 50};
+				48, 255, 25};
 static u8 t8_config_e[] = {GEN_ACQUISITIONCONFIG_T8,
-				27, 0, 5, 1, 0, 0, 8, 8, 40, 55};
+				27, 0, 5, 1, 0, 0, 8, 8, 8, 180};
 
 /* MXT224E_0V5_CONFIG */
 /* NEXTTCHDI added */
 static u8 t9_config_e[] = {TOUCH_MULTITOUCHSCREEN_T9,
-				139, 0, 0, 19, 11, 0, 16, 35, 2, 1,
-				10, 3, 1, 0, MXT224_MAX_MT_FINGERS, 5, 40, 10, 31, 3,
+				139, 0, 0, 19, 11, 0, 32, 50, 2, 1,
+				10, 3, 1, 11, MXT224_MAX_MT_FINGERS, 5, 40, 10, 31, 3,
 				223, 1, 10, 10, 10, 10, 143, 40, 143, 80,
 				18, 15, 50, 50, 2};
 
@@ -3102,29 +3102,85 @@ static u8 t23_config_e[] = {TOUCH_PROXIMITY_T23,
 				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 static u8 t25_config_e[] = {SPT_SELFTEST_T25,
-				0, 0, 3000, 0, 0, 0, 0, 0};
+				0, 0, 188, 52, 124, 21, 188, 52, 124, 21, 0, 0, 0, 0};
 
 static u8 t40_config_e[] = {PROCI_GRIPSUPPRESSION_T40,
 				0, 0, 0, 0, 0};
 
 static u8 t42_config_e[] = {PROCI_TOUCHSUPPRESSION_T42,
-				0, 0, 0, 0, 0, 0, 0, 0};
+				0, 32, 120, 100, 0, 0, 0, 0};
 
 static u8 t46_config_e[] = {SPT_CTECONFIG_T46,
-				0, 3, 16, 28, 0, 0, 1, 0, 0};
+				0, 3, 16, 35, 0, 0, 1, 0};
 
 static u8 t47_config_e[] = {PROCI_STYLUS_T47,
 				0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 /*MXT224E_0V5_CONFIG */
 static u8 t48_config_e[] = {PROCG_NOISESUPPRESSION_T48,
-				1, 12, 112, 0, 0, 0, 0, 0, 0, 0,
+	3, 4, 72, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	6, 6, 0, 0, 100, 4, 64, 10, 0, 20, 5, 0, 38, 0, 5,
+	0, 0, 0, 0, 0, 0, 32, 50, 2, 3, 1, 11, 10, 5, 40, 10, 10,
+	10, 10, 143, 40, 143, 80, 18, 15, 2 };
+
+static u8 t48_config_e_ta[] = {PROCG_NOISESUPPRESSION_T48,
+	1, 4, 88, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	6, 6, 0, 0, 100, 4, 64, 10, 0, 20, 5, 0, 38, 0, 20,
+	0, 0, 0, 0, 0, 0, 16, 70, 2, 5, 2, 46, 10, 5, 40, 10, 0,
+	10, 10, 143, 40, 143, 80, 18, 15, 2 };
+
+#elif defined(CONFIG_MACH_C1_NA_SPR_EPIC2_REV00)
+static u8 t7_config_e[] = {GEN_POWERCONFIG_T7,
+				48, 255, 15};
+
+static u8 t8_config_e[] = {GEN_ACQUISITIONCONFIG_T8,
+				27, 0, 5, 1, 0, 0, 4, 35, 40, 55};
+
+static u8 t9_config_e[] = {TOUCH_MULTITOUCHSCREEN_T9,
+				131, 0, 0, 19, 11, 0, 32, 50, 2, 7,
+				10, 3, 1, 46, MXT224_MAX_MT_FINGERS, 5, 40, 10, 31, 3,
+				223, 1, 10, 10, 10, 10, 143, 40, 143, 80,
+				18, 15, 50, 50, 2};
+
+static u8 t15_config_e[] = {TOUCH_KEYARRAY_T15,
+				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+static u8 t18_config_e[] = {SPT_COMCONFIG_T18,
+				0, 0};
+
+static u8 t23_config_e[] = {TOUCH_PROXIMITY_T23,
+				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+static u8 t25_config_e[] = {SPT_SELFTEST_T25,
+				0, 0, 0, 0, 0, 0, 0, 0};
+
+static u8 t40_config_e[] = {PROCI_GRIPSUPPRESSION_T40,
+				0, 0, 0, 0, 0};
+
+static u8 t42_config_e[] = {PROCI_TOUCHSUPPRESSION_T42,
+				0, 32, 120, 100, 0, 0, 0, 0};
+
+static u8 t46_config_e[] = {SPT_CTECONFIG_T46,
+				0, 3, 16, 48, 0, 0, 1, 0, 0};
+
+static u8 t47_config_e[] = {PROCI_STYLUS_T47,
+				0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+static u8 t48_config_e[] = {PROCG_NOISESUPPRESSION_T48,
+				3, 4, 64, 0, 0, 0, 0, 0, 0, 0,
+				0, 0, 0, 6, 6, 0, 0, 100, 4, 64,
+				10, 0, 20, 5, 0, 38, 0, 5, 0, 0,
+				0, 0, 0, 0, 32, 50, 2, 3, 1, 46,
+				10, 5, 40, 10, 10, 10, 10, 143, 40, 143,
+				80, 18, 15, 2};
+
+static u8 t48_config_e_ta[] = {PROCG_NOISESUPPRESSION_T48,
+				1, 4, 80, 0, 0, 0, 0, 0, 0, 0,
 				0, 0, 0, 6, 6, 0, 0, 100, 4, 64,
 				10, 0, 20, 5, 0, 38, 0, 20, 0, 0,
-				0, 0, 0, 0, 0, 55, 2, 5, 2, 0,
-				5, 10, 10, 0, 0, 16, 17, 146, 60, 149,
-				68, 25, 15, 3};
-
+				0, 0, 0, 0, 16, 70, 2, 5, 2, 46,
+				10, 5, 40, 10, 0, 10, 10, 143, 40, 143,
+				80, 18, 15, 2};
 #else
 
 static u8 t7_config_e[] = {GEN_POWERCONFIG_T7,
