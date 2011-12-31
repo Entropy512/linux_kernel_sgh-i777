@@ -42,6 +42,9 @@
 #ifdef CONFIG_ANDROID_PMEM
 #include <linux/android_pmem.h>
 #endif
+#include <linux/bootmem.h>
+#include <linux/reboot.h>
+#include <linux/host_notify.h>
 
 #include <asm/pmu.h>
 #include <asm/mach/arch.h>
@@ -4647,6 +4650,43 @@ static void __init mipi_fb_init(void)
 			dsim_pd->lcd_panel_name);
 }
 #endif
+
+#ifdef CONFIG_ANDROID_RAM_CONSOLE
+static struct resource ram_console_resource[] = {
+	{
+		.flags = IORESOURCE_MEM,
+	}
+};
+
+static struct platform_device ram_console_device = {
+	.name = "ram_console",
+	.id = -1,
+	.num_resources = ARRAY_SIZE(ram_console_resource),
+	.resource = ram_console_resource,
+};
+
+static void __init setup_ram_console_mem(char *str)
+	{
+		unsigned size = memparse(str, &str);
+		unsigned long flags;
+		if (size && (*str == '@')) {
+			unsigned long long base = 0;
+
+			base = simple_strtoul(++str, &str, 0);
+			if (reserve_bootmem(base, size, BOOTMEM_EXCLUSIVE)) {
+				pr_err("%s: failed reserving size %d at base 0xll%x\n", __func__, size, base);
+				return;
+			}
+			ram_console_resource[0].start = base;
+			ram_console_resource[0].end = base + size - 1;
+			pr_err("%s: %x at %x\n", __func__, size, base);
+		}
+	};
+
+__setup("ram_console=", setup_ram_console_mem);
+#endif
+
+
 #ifdef CONFIG_ANDROID_PMEM
 static struct android_pmem_platform_data pmem_pdata = {
 	.name = "pmem",
@@ -5780,6 +5820,10 @@ static struct platform_device *smdkc210_devices[] __initdata = {
 	&s5p_device_tmu,
 #endif
 
+#ifdef CONFIG_ANDROID_RAM_CONSOLE
+	&ram_console_device,
+#endif
+
 #if defined(CONFIG_WIMAX_CMC) && defined(CONFIG_TARGET_LOCALE_NA)
 	&s3c_device_cmc732,
 #endif
@@ -5835,6 +5879,13 @@ static void __init smdkc210_map_io(void)
 	s5pv310_reserve();
 #elif defined(CONFIG_S5P_MEM_BOOTMEM)
 	s5p_reserve_bootmem();
+#endif
+#ifdef CONFIG_ANDROID_RAM_CONSOLE
+	if (!reserve_bootmem(0x5e900000, (1 << CONFIG_LOG_BUF_SHIFT), BOOTMEM_EXCLUSIVE)) {
+		ram_console_resource[0].start = 0x5e900000;
+		ram_console_resource[0].end = ram_console_resource[0].start + (1 << CONFIG_LOG_BUF_SHIFT) - 1;
+		pr_err("%s ram_console_resource[0].start:i%p, end:%p\n", __func__, ram_console_resource[0].start, ram_console_resource[0].end);
+	}
 #endif
 	sec_getlog_supply_meminfo(meminfo.bank[0].size, meminfo.bank[0].start,
 				  meminfo.bank[1].size, meminfo.bank[1].start);
