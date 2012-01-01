@@ -132,17 +132,12 @@ IMMVIBESPIAPI VibeStatus ImmVibeSPI_ForceOut_AmpDisable(VibeUInt8 nActuatorIndex
 #endif
 
 	if (g_bAmpEnabled) {
-#ifndef CONFIG_MACH_P6_REV02
 		struct regulator *regulator;
-#endif
 
 		g_bAmpEnabled = false;
 		_pwm_config(Immvib_pwm, freq_count/2, freq_count);
 
 		if (regulator_hapticmotor_enabled == 1) {
-#ifdef CONFIG_MACH_P6_REV02
-			gpio_direction_output(GPIO_MOTOR_EN, 0);
-#else
 			regulator = regulator_get(NULL, "vmotor");
 
 			if (IS_ERR(regulator)) {
@@ -152,7 +147,7 @@ IMMVIBESPIAPI VibeStatus ImmVibeSPI_ForceOut_AmpDisable(VibeUInt8 nActuatorIndex
 
 			regulator_force_disable(regulator);
 			regulator_put(regulator);
-#endif
+
 			regulator_hapticmotor_enabled = 0;
 
 			printk(KERN_DEBUG "tspdrv: %s (%d)\n", __func__, regulator_hapticmotor_enabled);
@@ -184,17 +179,13 @@ IMMVIBESPIAPI VibeStatus ImmVibeSPI_ForceOut_AmpEnable(VibeUInt8 nActuatorIndex)
 #endif
 
 	if (!g_bAmpEnabled) {
-#ifndef CONFIG_MACH_P6_REV02
 		struct regulator *regulator;
-#endif
 
 		g_bAmpEnabled = true;
 
 		_pwm_config(Immvib_pwm, freq_count/2, freq_count);
 		vibe_control_max8997(Immvib_pwm, 1);
-#ifdef CONFIG_MACH_P6_REV02
-			gpio_direction_output(GPIO_MOTOR_EN, 1);
-#else
+
 		regulator = regulator_get(NULL, "vmotor");
 
 		if (IS_ERR(regulator)) {
@@ -204,7 +195,7 @@ IMMVIBESPIAPI VibeStatus ImmVibeSPI_ForceOut_AmpEnable(VibeUInt8 nActuatorIndex)
 
 		regulator_enable(regulator);
 		regulator_put(regulator);
-#endif
+
 		regulator_hapticmotor_enabled = 1;
 
 		printk(KERN_DEBUG "tspdrv: %s (%d)\n", __func__, regulator_hapticmotor_enabled);

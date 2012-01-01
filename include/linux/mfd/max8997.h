@@ -127,9 +127,6 @@ struct max8997_muic_data {
 	int		(*cfg_uart_gpio) (void);
 	void		(*jig_uart_cb) (int path);
 	int			(*host_notify_cb) (int enable);
-#if defined(CONFIG_TARGET_LOCALE_NAATT)
-	int		(*cable_type_notify) (cable_type_t cable_type);
-#endif	
 #if defined(CONFIG_TARGET_LOCALE_NA)
         int             gpio_uart_sel;
 #else

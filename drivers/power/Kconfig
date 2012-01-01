@@ -189,10 +189,4 @@ config MAX8922_CHARGER
 	  Say Y here to enable support for the battery charger in the Maxim
 	  MAX8922 Charger IC.
 
-config SMB136_CHARGER
-	tristate "SMB136 battery charger support"
-	depends on I2C
-	help
-	  Say Y here to enable support for the SMB136 charger
-
 endif # POWER_SUPPLY

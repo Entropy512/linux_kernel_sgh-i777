@@ -63,6 +63,7 @@ enum {
 	PS_THD,
 };
 #endif
+
 static u8 reg_defaults[8] = {
 	0x00, /* ARA: read only register */
 	0x00, /* ALS_CMD: als cmd */
@@ -74,21 +75,12 @@ static u8 reg_defaults[8] = {
 	0x0A, /* PS_THD: 10 */
 };
 
-#if defined(CONFIG_MACH_C1_NA_SPR_REV05)
-static const int adc_table[4] = {
-	15,
-	107,
-	1042,
-	10400,
-};
-#else
 static const int adc_table[4] = {
 	15,
 	150,
 	1500,
 	15000,
 };
-#endif
 
 enum {
 	LIGHT_ENABLED = BIT(0),
@@ -262,12 +254,7 @@ static ssize_t proximity_state_show(struct device *dev,
 
 	if (!(cm3663->power_state & PROXIMITY_ENABLED)) {
 		mutex_lock(&cm3663->power_lock);
-#if defined(CONFIG_MACH_Q1_REV00) || defined(CONFIG_MACH_Q1_REV02)
-		if (!cm3663->power_state)
-			cm3663->pdata->proximity_power(1);
-#else
 		cm3663->pdata->proximity_power(1);
-#endif
 		cm3663_i2c_write(cm3663, REGS_PS_CMD, reg_defaults[5]);
 		mutex_unlock(&cm3663->power_lock);
 	}
@@ -278,12 +265,7 @@ static ssize_t proximity_state_show(struct device *dev,
 	if (!(cm3663->power_state & PROXIMITY_ENABLED)) {
 		mutex_lock(&cm3663->power_lock);
 		cm3663_i2c_write(cm3663, REGS_PS_CMD, 0x01);
-#if defined(CONFIG_MACH_Q1_REV00) || defined(CONFIG_MACH_Q1_REV02)
-		if (!cm3663->power_state)
-			cm3663->pdata->proximity_power(0);
-#else
 		cm3663->pdata->proximity_power(0);
-#endif
 		mutex_unlock(&cm3663->power_lock);
 	}
 
@@ -373,19 +355,11 @@ static ssize_t light_enable_store(struct device *dev,
 
 	mutex_lock(&cm3663->power_lock);
 	if (new_value && !(cm3663->power_state & LIGHT_ENABLED)) {
-#if defined(CONFIG_MACH_Q1_REV00) || defined(CONFIG_MACH_Q1_REV02)
-		if (!cm3663->power_state)
-			cm3663->pdata->proximity_power(1);
-#endif
 		cm3663->power_state |= LIGHT_ENABLED;
 		cm3663_light_enable(cm3663);
 	} else if (!new_value && (cm3663->power_state & LIGHT_ENABLED)) {
 		cm3663_light_disable(cm3663);
 		cm3663->power_state &= ~LIGHT_ENABLED;
-#if defined(CONFIG_MACH_Q1_REV00) || defined(CONFIG_MACH_Q1_REV02)
-		if (!cm3663->power_state)
-			cm3663->pdata->proximity_power(0);
-#endif
 	}
 	mutex_unlock(&cm3663->power_lock);
 	return size;
@@ -410,13 +384,8 @@ static ssize_t proximity_enable_store(struct device *dev,
 
 	mutex_lock(&cm3663->power_lock);
 	if (new_value && !(cm3663->power_state & PROXIMITY_ENABLED)) {
-#if defined(CONFIG_MACH_Q1_REV00) || defined(CONFIG_MACH_Q1_REV02)
-		if (!cm3663->power_state)
-			cm3663->pdata->proximity_power(1);
-#else
-		cm3663->pdata->proximity_power(1);
-#endif
 		cm3663->power_state |= PROXIMITY_ENABLED;
+		cm3663->pdata->proximity_power(1);
 		cm3663_i2c_read(cm3663, REGS_ARA, &tmp);
 		cm3663_i2c_read(cm3663, REGS_ARA, &tmp);
 		cm3663_i2c_read(cm3663, REGS_ARA, &tmp);
@@ -430,12 +399,7 @@ static ssize_t proximity_enable_store(struct device *dev,
 		disable_irq_wake(cm3663->irq);
 		disable_irq(cm3663->irq);
 		cm3663_i2c_write(cm3663, REGS_PS_CMD, 0x01);
-#if defined(CONFIG_MACH_Q1_REV00) || defined(CONFIG_MACH_Q1_REV02)
-		if (!cm3663->power_state)
-			cm3663->pdata->proximity_power(0);
-#else
 		cm3663->pdata->proximity_power(0);
-#endif
 	}
 	mutex_unlock(&cm3663->power_lock);
 	return size;
@@ -469,12 +433,7 @@ static ssize_t proximity_avg_store(struct device *dev,
 	mutex_lock(&cm3663->power_lock);
 	if (new_value) {
 		if (!(cm3663->power_state & PROXIMITY_ENABLED)) {
-#if defined(CONFIG_MACH_Q1_REV00) || defined(CONFIG_MACH_Q1_REV02)
-			if (!cm3663->power_state)
-				cm3663->pdata->proximity_power(1);
-#else
 			cm3663->pdata->proximity_power(1);
-#endif
 			cm3663_i2c_write(cm3663, REGS_PS_CMD, reg_defaults[5]);
 		}
 		hrtimer_start(&cm3663->prox_timer, cm3663->prox_poll_delay,
@@ -484,12 +443,7 @@ static ssize_t proximity_avg_store(struct device *dev,
 		cancel_work_sync(&cm3663->work_prox);
 		if (!(cm3663->power_state & PROXIMITY_ENABLED)) {
 			cm3663_i2c_write(cm3663, REGS_PS_CMD, 0x01);
-#if defined(CONFIG_MACH_Q1_REV00) || defined(CONFIG_MACH_Q1_REV02)
-			if (!cm3663->power_state)
-				cm3663->pdata->proximity_power(0);
-#else
 			cm3663->pdata->proximity_power(0);
-#endif
 		}
 	}
 	mutex_unlock(&cm3663->power_lock);
@@ -667,10 +621,7 @@ static int cm3663_setup_reg(struct cm3663_data *cm3663)
 	pr_err("%s: initial proximity value = %d\n", __func__, tmp);
 	mutex_lock(&cm3663->power_lock);
 	cm3663_i2c_write(cm3663, REGS_PS_CMD, 0x01);
-#if defined(CONFIG_MACH_Q1_REV00) || defined(CONFIG_MACH_Q1_REV02)
-#else
 	cm3663->pdata->proximity_power(0);
-#endif
 	mutex_unlock(&cm3663->power_lock);
 
 	return err;
@@ -901,11 +852,6 @@ static int cm3663_suspend(struct device *dev)
 	struct cm3663_data *cm3663 = i2c_get_clientdata(client);
 	if (cm3663->power_state & LIGHT_ENABLED)
 		cm3663_light_disable(cm3663);
-#if defined(CONFIG_MACH_Q1_REV00) || defined(CONFIG_MACH_Q1_REV02)
-	if (!(cm3663->power_state & PROXIMITY_ENABLED))
-		cm3663->pdata->proximity_power(0);
-#endif
-
 	return 0;
 }
 
@@ -914,13 +860,8 @@ static int cm3663_resume(struct device *dev)
 	/* Turn power back on if we were before suspend. */
 	struct i2c_client *client = to_i2c_client(dev);
 	struct cm3663_data *cm3663 = i2c_get_clientdata(client);
-	if (cm3663->power_state & LIGHT_ENABLED) {
-#if defined(CONFIG_MACH_Q1_REV00) || defined(CONFIG_MACH_Q1_REV02)
-		if (!(cm3663->power_state & PROXIMITY_ENABLED))
-			cm3663->pdata->proximity_power(1);
-#endif
+	if (cm3663->power_state & LIGHT_ENABLED)
 		cm3663_light_enable(cm3663);
-	}
 	return 0;
 }
 

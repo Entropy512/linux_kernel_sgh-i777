@@ -18,8 +18,5 @@ struct m5mo_platform_data {
 
 	/* ISP interrupt */
 	int (*config_isp_irq)(void);
-#if defined(CONFIG_TARGET_LOCALE_NAATT)
-	void (*set_recording_state)(bool);
-#endif
 };
 

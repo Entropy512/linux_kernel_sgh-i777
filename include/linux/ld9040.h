@@ -12,10 +12,14 @@
 #include <linux/types.h>
 
 struct ld9040_panel_data {
+	const unsigned short *seq_display_set;
+	const unsigned short *seq_display_set_sm2_a2;
+	const unsigned short *seq_etc_set;
 	const unsigned short *seq_user_set;
 	const unsigned short *seq_panelcondition_set;
 	const unsigned short *seq_displayctl_set;
 	const unsigned short *seq_gtcon_set;
+	const unsigned short *seq_manpwr_set;
 	const unsigned short *seq_pwrctl_set;
 	const unsigned short *seq_pwrctl_set_sm2_a2;
 	const unsigned short *seq_gamma_set1;
@@ -25,6 +29,8 @@ struct ld9040_panel_data {
 	const unsigned short *display_off;
 	const unsigned short *sleep_in;
 	const unsigned short *sleep_out;
+	const unsigned short *gamma_start;
+	const unsigned short *gamma_ctrl;
 	const unsigned short **gamma19_table;
 	const unsigned short **gamma22_table;
 	const unsigned short **gamma_sm2_a1_19_table;

@@ -62,7 +62,7 @@ static inline struct s5k5bbgx_state *to_state(struct v4l2_subdev *sd)
 	return container_of(sd, struct s5k5bbgx_state, sd);
 }
 
-//#define CONFIG_CAM_DEBUG
+#define CONFIG_CAM_DEBUG
 #define cam_warn(fmt, ...)	\
 	do { \
 		printk(KERN_WARNING "%s: " fmt, __func__, ##__VA_ARGS__); \

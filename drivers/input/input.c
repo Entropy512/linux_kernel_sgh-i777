@@ -236,7 +236,7 @@ static void input_handle_event(struct input_dev *dev,
 		break;
 
 	case EV_ABS:
-#ifdef _SUPPORT_SHAPE_TOUCH_
+#ifdef CONFIG_SHAPE_TOUCH
 		if (is_event_supported(code, dev->absbit, ABS_MAX)) {
 			if ( code < ABS_MT_TOUCH_MAJOR&& code > ABS_MT_COMPONENT) {
 

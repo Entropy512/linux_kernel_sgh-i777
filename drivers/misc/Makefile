@@ -11,8 +11,8 @@ obj-$(CONFIG_ATMEL_SSC)		+= atmel-ssc.o
 obj-$(CONFIG_ATMEL_TCLIB)	+= atmel_tclib.o
 obj-$(CONFIG_ICS932S401)	+= ics932s401.o
 obj-$(CONFIG_LKDTM)		+= lkdtm.o
-obj-$(CONFIG_TIFM_CORE)		+= tifm_core.o
-obj-$(CONFIG_TIFM_7XX1)		+= tifm_7xx1.o
+obj-$(CONFIG_TIFM_CORE)       	+= tifm_core.o
+obj-$(CONFIG_TIFM_7XX1)       	+= tifm_7xx1.o
 obj-$(CONFIG_PHANTOM)		+= phantom.o
 obj-$(CONFIG_ANDROID_PMEM)	+= pmem.o
 obj-$(CONFIG_SGI_IOC4)		+= ioc4.o
@@ -44,8 +44,4 @@ obj-$(CONFIG_MUIC_MAX8997)	+= max8997-muic.o
 obj-$(CONFIG_CMA_DEVICE)	+= cma-dev.o
 obj-$(CONFIG_WIMAX_CMC)		+= max8893.o
 obj-$(CONFIG_PN544)		+= pn544.o
-ifeq ($(CONFIG_TARGET_LOCALE_NA),y)
-obj-$(CONFIG_SEC_DEV_JACK)	+= sec_jack_spr.o
-else
 obj-$(CONFIG_SEC_DEV_JACK)	+= sec_jack.o
-endif

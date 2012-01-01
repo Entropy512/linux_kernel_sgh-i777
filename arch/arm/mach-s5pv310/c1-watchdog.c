@@ -41,36 +41,19 @@ module_param_named(sec_reset, watchdog_reset, uint, 0644);
 static unsigned watchdog_pet = 0; /* 0 means off, 5 is proper */
 module_param_named(sec_pet, watchdog_pet, uint, 0644);
 
-#ifdef PET_BY_WORKQUEUE
 static struct workqueue_struct *watchdog_wq;
 static void watchdog_workfunc(struct work_struct *work);
 static DECLARE_DELAYED_WORK(watchdog_work, watchdog_workfunc);
-#else
-static struct hrtimer watchdog_timer;
-static enum hrtimer_restart watchdog_timerfunc(struct hrtimer *timer);
-#endif
 
 static struct clk *wd_clk;
 static spinlock_t wdt_lock;
 
-#ifdef PET_BY_WORKQUEUE
 static void watchdog_workfunc(struct work_struct *work)
 {
 	/* pr_err("%s kicking...\n", __func__); */
 	writel(watchdog_reset * TPS, S3C2410_WTCNT);
-	queue_delayed_work_on(0, watchdog_wq, &watchdog_work,
-			      watchdog_pet * HZ);
+	queue_delayed_work_on(0, watchdog_wq, &watchdog_work, watchdog_pet * HZ);
 }
-#else
-static enum hrtimer_restart watchdog_timerfunc(struct hrtimer *timer)
-{
-	/* pr_err("%s kicking...\n", __func__); */
-	writel(watchdog_reset * TPS, S3C2410_WTCNT);
-	hrtimer_start(&watchdog_timer,
-		      ktime_set(watchdog_pet, 0), HRTIMER_MODE_REL);
-	return HRTIMER_NORESTART;
-}
-#endif
 
 static void watchdog_start(void)
 {
@@ -94,28 +77,17 @@ static void watchdog_start(void)
 	spin_unlock_irqrestore(&wdt_lock, flags);
 
 	/* make sure we're ready to pet the dog */
-#ifdef PET_BY_WORKQUEUE
-	queue_delayed_work_on(0, watchdog_wq, &watchdog_work,
-			      watchdog_pet * HZ);
-#else
-	hrtimer_start(&watchdog_timer,
-		      ktime_set(watchdog_pet, 0), HRTIMER_MODE_REL);
-#endif
+	queue_delayed_work_on(0, watchdog_wq, &watchdog_work, watchdog_pet * HZ);
 }
 
 static void watchdog_stop(void)
 {
 	writel(0, S3C2410_WTCON);
-#ifdef PET_BY_WORKQUEUE
-	/* do nothing? */
-#else
-	hrtimer_cancel(&watchdog_timer);
-#endif
 }
 
-#ifdef PET_BY_WORKQUEUE
 static int __devinit watchdog_cpu_callback(struct notifier_block *nfb,
-					   unsigned long action, void *hcpu)
+						unsigned long action,
+						void *hcpu)
 {
 	switch (action) {
 	case CPU_ONLINE:
@@ -123,8 +95,6 @@ static int __devinit watchdog_cpu_callback(struct notifier_block *nfb,
 	}
 	return NOTIFY_OK;
 }
-#endif
-
 static int watchdog_probe(struct platform_device *pdev)
 {
 	wd_clk = clk_get(NULL, "watchdog");
@@ -133,15 +103,9 @@ static int watchdog_probe(struct platform_device *pdev)
 
 	spin_lock_init(&wdt_lock);
 
-#ifdef PET_BY_WORKQUEUE
 	watchdog_wq = create_rt_workqueue("pet_watchdog");
 	watchdog_start();
 	hotcpu_notifier(watchdog_cpu_callback, 0);
-#else
-	hrtimer_init(&watchdog_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
-	watchdog_timer.function = watchdog_timerfunc;
-	watchdog_start();
-#endif
 
 	return 0;
 }

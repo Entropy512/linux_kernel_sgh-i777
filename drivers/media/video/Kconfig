@@ -427,7 +427,7 @@ config VIDEO_S5K6AAFX
 
 config VIDEO_S5K5BAFX
 	tristate "S5K5BAFX supporting camera driver"
-	depends on I2C && VIDEO_V4L2
+	depends on I2C && VIDEO_V4L2 && MACH_C1_REV02
 	---help---
 	  This driver supports S5K5BAFX SoC camera module
 
@@ -437,12 +437,6 @@ config VIDEO_S5K5BBGX
 	---help---
 	  This driver supports S5K5BBGX SoC camera module
 
-config VIDEO_SR130PC10
-	tristate "SR130PC10 supporting camera driver"
-	depends on I2C && VIDEO_V4L2 && TARGET_LOCALE_NA
-	---help---
-	  This driver supports SR130PC10 SoC camera module
-	  
 config VIDEO_S5K3BA
 	tristate "S5K3BA supporting camera driver"
 	depends on I2C && VIDEO_V4L2

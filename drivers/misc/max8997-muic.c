@@ -735,10 +735,6 @@ static int max8997_muic_attach_usb_type(struct max8997_muic_info *info, int adc)
 		return ret;
 	}
 
-#ifdef CONFIG_USBHUB_USB3803
-	/* setting usb hub in Diagnostic(hub) mode */
-	usb3803_set_mode(USB_3803_MODE_HUB);
-#endif /* CONFIG_USBHUB_USB3803 */
 
 	if (mdata->sw_path == CP_USB_MODE) {
 		info->cable_type = CABLE_TYPE_USB;
@@ -750,6 +746,10 @@ static int max8997_muic_attach_usb_type(struct max8997_muic_info *info, int adc)
 
 	if (path == AP_USB_MODE) {
 		if (mdata->usb_cb && info->is_usb_ready)
+#ifdef CONFIG_USBHUB_USB3803
+			/* setting usb hub in Diagnostic(hub) mode */
+			usb3803_set_mode(USB_3803_MODE_HUB);
+#endif /* CONFIG_USBHUB_USB3803 */
 			mdata->usb_cb(USB_CABLE_ATTACHED);
 	}
 
@@ -1190,16 +1190,13 @@ static int max8997_muic_handle_detach(struct max8997_muic_info *info)
 	return ret;
 }
 
-static void max8997_muic_detect_dev(struct max8997_muic_info *info)
+static void max8997_muic_detect_dev(struct max8997_muic_info *info, int irq)
 {
 	struct i2c_client *client = info->muic;
 	u8 status[2];
 	u8 adc, chgtyp, adcerr;
 	int intr = INT_ATTACH;
 	int ret;
-#if defined(CONFIG_TARGET_LOCALE_NAATT)
-	struct max8997_muic_data *mdata = info->muic_data;
-#endif
 
 	ret = max8997_bulk_read(client, MAX8997_MUIC_REG_STATUS1, 2, status);
 	if (ret) {
@@ -1211,7 +1208,8 @@ static void max8997_muic_detect_dev(struct max8997_muic_info *info)
 	dev_info(info->dev, "%s: STATUS1:0x%x, 2:0x%x\n", __func__,
 			status[0], status[1]);
 
-	if (max8997_muic_handle_dock_vol_key(info, status[0]))
+	if ((irq == info->irq_adc) &&
+			max8997_muic_handle_dock_vol_key(info, status[0]))
 		return;
 
 	adc = status[0] & STATUS1_ADC_MASK;
@@ -1240,13 +1238,6 @@ static void max8997_muic_detect_dev(struct max8997_muic_info *info)
 		dev_info(info->dev, "%s: DETACHED\n", __func__);
 		max8997_muic_handle_detach(info);
 	}
-
-#if defined(CONFIG_TARGET_LOCALE_NAATT)
-	if (mdata->cable_type_notify) {
-		dev_info(info->dev, "%s: notify current cable type\n", __func__);
-		mdata->cable_type_notify(info->cable_type);
-	}
-#endif
 	return;
 }
 
@@ -1256,7 +1247,7 @@ static irqreturn_t max8997_muic_irq(int irq, void *data)
 	dev_info(info->dev, "%s: irq:%d\n", __func__, irq);
 
 	mutex_lock(&info->mutex);
-	max8997_muic_detect_dev(info);
+	max8997_muic_detect_dev(info, irq);
 	mutex_unlock(&info->mutex);
 
 	return IRQ_HANDLED;
@@ -1277,7 +1268,7 @@ static int max8997_muic_irq_init(struct max8997_muic_info *info)
 
 #if !defined(CONFIG_MACH_C1_REV00)
 	dev_info(info->dev, "%s: system_rev=%d\n", __func__, system_rev);
-#if !defined(CONFIG_MACH_P6_REV00) && !defined(CONFIG_MACH_P6_REV02)
+#if !defined(CONFIG_MACH_Q1_REV00) && !defined(CONFIG_MACH_Q1_REV02)
 	if (system_rev < 0x3)
 		return 0;
 #endif
@@ -1307,7 +1298,7 @@ static void max8997_muic_init_detect(struct work_struct *work)
 
 	dev_info(info->dev, "%s\n", __func__);
 	mutex_lock(&info->mutex);
-	max8997_muic_detect_dev(info);
+	max8997_muic_detect_dev(info, -1);
 	mutex_unlock(&info->mutex);
 }
 
@@ -1328,6 +1319,10 @@ static void max8997_muic_usb_detect(struct work_struct *work)
 			case CABLE_TYPE_USB:
 			case CABLE_TYPE_JIG_USB_OFF:
 			case CABLE_TYPE_JIG_USB_ON:
+#ifdef CONFIG_USBHUB_USB3803
+				/* setting usb hub in Diagnostic(hub) mode */
+				usb3803_set_mode(USB_3803_MODE_HUB);
+#endif /* CONFIG_USBHUB_USB3803 */
 				mdata->usb_cb(USB_CABLE_ATTACHED);
 				break;
 			case CABLE_TYPE_OTG:

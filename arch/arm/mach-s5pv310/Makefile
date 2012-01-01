@@ -26,7 +26,14 @@ obj-$(CONFIG_S5PV310_PM)	+= pm.o sleep.o
 
 obj-$(CONFIG_SMP)		+= platsmp.o headsmp.o
 obj-$(CONFIG_HOTPLUG_CPU)	+= hotplug.o
+
+# Support higher armclock than 1.2GHz in DVFS according to chip
+ifeq ($(CONFIG_S5PV310_HI_ARMCLK_THAN_1_2GHZ),y)
+obj-$(CONFIG_CPU_FREQ)		+= cpufreq_high.o cpu_ppmu.o
+else
 obj-$(CONFIG_CPU_FREQ)		+= cpufreq.o cpu_ppmu.o
+endif
+
 obj-$(CONFIG_CPU_IDLE)		+= cpuidle.o
 obj-$(CONFIG_S5P_MEM_BOOTMEM)	+= bootmem-smdkv310.o
 obj-$(CONFIG_S5PV310_PM_HOTPLUG)	+= pm-hotplug.o
@@ -37,18 +44,12 @@ obj-$(CONFIG_MACH_SMDKV310)	+= mach-smdkv310.o button-smdkv310.o
 obj-$(CONFIG_MACH_C1)		+= mach-c1.o
 obj-$(CONFIG_MACH_C1)		+= c1-gpio.o
 obj-$(CONFIG_MACH_UNIVERSAL_C210)	+= mach-universal_c210.o
-
-obj-$(CONFIG_PANEL_C1)		+= c1-panel.o
-obj-$(CONFIG_PANEL_C1_NA_SPR)	+= c1-na-spr-panel.o
-obj-$(CONFIG_PANEL_EPIC2)	+= epic2-panel.o
-
 ifeq ($(CONFIG_TARGET_LOCALE_NA),y)
-obj-$(CONFIG_MACH_C1)		+= dev-c1-phone.o
+obj-$(CONFIG_MACH_C1)		+= c1-na-spr-panel.o
 else
+obj-$(CONFIG_MACH_C1)		+= c1-panel.o
 obj-$(CONFIG_MACH_C1)		+= mach-c1-gps.o
 endif
-
-obj-$(CONFIG_MACH_C1_NA_SPR_EPIC2_REV00)	+= epic2-panel.o
 obj-$(CONFIG_MACH_C1)		+= c1-wlan.o
 obj-$(CONFIG_MACH_C1)		+= c1-regulator-consumer.o
 obj-$(CONFIG_SAMSUNG_PHONE_SVNET)	+= c1-modem.o

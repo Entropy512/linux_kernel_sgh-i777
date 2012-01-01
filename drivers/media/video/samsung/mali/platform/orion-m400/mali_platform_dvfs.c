@@ -387,33 +387,60 @@ extern struct s5pv310_asv_info asv_info;
 
 static mali_bool mali_dvfs_table_update()
 {
-	switch(asv_info.asv_num)
-	{
-		case 0:
-		case 1:
-		case 2:
-			mali_dvfs[MALI_DVFS_L3].vol = 1000000; // 160Mhz
-			mali_dvfs[MALI_DVFS_L2].vol = 1100000; // 266Mhz
-			break;
-		case 3:
-		case 4:
-			mali_dvfs[MALI_DVFS_L3].vol = 950000; // 160Mhz
-			mali_dvfs[MALI_DVFS_L2].vol = 1000000; // 266Mhz
-			break;
-		case 5:
-		case 6:
-			mali_dvfs[MALI_DVFS_L3].vol = 950000; // 160Mhz
-			mali_dvfs[MALI_DVFS_L2].vol = 1000000; // 266Mhz
-			break;
-		case 7:
-		case 8:
-			mali_dvfs[MALI_DVFS_L3].vol = 950000; // 160Mhz
-			mali_dvfs[MALI_DVFS_L2].vol = 950000; // 266Mhz
-			break;
-		default :
-			MALI_PRINT(("mali asv level is invalid %d", asv_info.asv_num));
-			return MALI_FALSE;
+
+#ifdef CONFIG_S5PV310_HI_ARMCLK_THAN_1_2GHZ
+	MALI_DEBUG_PRINT(3, ("> max arm clock is higher than 1.2GHz.\n"));
+	switch(asv_info.asv_num) {
+	/* ASB table for 1.4GHz */
+	case 0:
+	case 1:
+		/* SS & A group */
+		mali_dvfs[MALI_DVFS_L2].vol = 1100000; // 266Mhz
+		mali_dvfs[MALI_DVFS_L3].vol = 1000000; // 160Mhz
+		break;
+	case 2:
+	case 3:
+		/* B & C group */
+		mali_dvfs[MALI_DVFS_L2].vol = 1000000; // 266Mhz
+		mali_dvfs[MALI_DVFS_L3].vol =  950000; // 160Mhz
+		break;
+	case 4:
+		/* D group */
+		mali_dvfs[MALI_DVFS_L2].vol =  950000; // 266Mhz
+		mali_dvfs[MALI_DVFS_L3].vol =  950000; // 160Mhz
+		break;
+	default :
+		MALI_PRINT(("mali asv level is invalid %d", asv_info.asv_num));
+		return MALI_FALSE;
 	}
+#else
+	switch(asv_info.asv_num) {
+	case 0:
+	case 1:
+	case 2:
+		mali_dvfs[MALI_DVFS_L3].vol = 1000000; // 160Mhz
+		mali_dvfs[MALI_DVFS_L2].vol = 1100000; // 266Mhz
+		break;
+	case 3:
+	case 4:
+		mali_dvfs[MALI_DVFS_L3].vol = 950000; // 160Mhz
+		mali_dvfs[MALI_DVFS_L2].vol = 1000000; // 266Mhz
+		break;
+	case 5:
+	case 6:
+		mali_dvfs[MALI_DVFS_L3].vol = 950000; // 160Mhz
+		mali_dvfs[MALI_DVFS_L2].vol = 1000000; // 266Mhz
+		break;
+	case 7:
+	case 8:
+		mali_dvfs[MALI_DVFS_L3].vol = 950000; // 160Mhz
+		mali_dvfs[MALI_DVFS_L2].vol = 950000; // 266Mhz
+		break;
+	default :
+		MALI_PRINT(("mali asv level is invalid %d", asv_info.asv_num));
+		return MALI_FALSE;
+	}
+#endif
 
 	return MALI_TRUE;
 

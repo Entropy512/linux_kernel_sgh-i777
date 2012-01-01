@@ -337,8 +337,7 @@ int s5pv310_get_max_speed(void)
 		unsigned int pro_id, pkg_id;
 
 		chipid_clk = clk_get(NULL, "chipid");
-		if (chipid_clk == NULL)
-		{
+		if (chipid_clk == NULL) {
 			printk(KERN_ERR "failed to find chipid clock source\n");
 			return -EINVAL;
 		}
@@ -347,12 +346,16 @@ int s5pv310_get_max_speed(void)
 		pro_id = __raw_readl(S5P_VA_CHIPID);
 		printk(KERN_INFO "pro_id: 0x%08x\n", pro_id);
 
-		if ((pro_id & 0xf) == 0x1) {
+		if ((pro_id & 0xf) >= 0x1) {
 			pkg_id = __raw_readl(S5P_VA_CHIPID + 0x4);
 			printk(KERN_INFO "pkg_id: 0x%08x\n", pkg_id);
 
 			switch (pkg_id & 0x7) {
+			case 5:
+				max_speed = 1400000;
+				break;
 			case 1:
+			case 7:
 				max_speed = 1600000;
 				break;
 			case 0:
@@ -365,6 +368,8 @@ int s5pv310_get_max_speed(void)
 			}
 
 		} else {
+			pkg_id = __raw_readl(S5P_VA_CHIPID + 0x4);
+			printk(KERN_INFO "pkg_id: 0x%08x\n", pkg_id);
 			max_speed = 1000000;
 		}
 
