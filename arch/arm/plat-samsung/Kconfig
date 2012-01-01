@@ -119,7 +119,7 @@ config S5P_GPIO_CONPDN
 config S5P_GPIO_PUDPDN
 	bool
 	help
-	  Internal configuration to get and set correct GPIO control
+	  Internal configuration to get and set correct GPIO control 
 	  powerdown pull up/down state
 
 config SAMSUNG_GPIO_EXTRA
@@ -274,7 +274,6 @@ config S3C_DEV_I2C17_EMUL
         depends on ARCH_S5PV310
         help
           Compile in platform device definitions for I2C channel 17
-
 config S3C_DEV_FB
 	bool
 	help

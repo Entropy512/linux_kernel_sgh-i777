@@ -29,7 +29,7 @@
 #include <plat/adc.h>
 #include <mach/sec_battery.h>
 
-#if defined(CONFIG_TARGET_LOCALE_NA) || defined(CONFIG_TARGET_LOCALE_NAATT)
+#ifdef CONFIG_TARGET_LOCALE_NA
 #define POLLING_INTERVAL	(10 * 1000)
 #else
 #define POLLING_INTERVAL	(40 * 1000)
@@ -39,16 +39,11 @@
 #if defined(CONFIG_TARGET_LOCALE_NAATT)
 #define VF_CHECK_INTERVAL	(5 * 1000)
 
-#define	MAX_VF	1800
-#define	MIN_VF	1100
+#define	MAX_VF	1500
+#define	MIN_VF	1350
 #define	VF_COUNT	1
 #else
 #define VF_CHECK_INTERVAL	(10 * 1000)
-#ifdef CONFIG_MACH_P6_REV02
-#define	MAX_VF_ADC	2100
-#define	MIN_VF_ADC	2000
-#define	ADC_CH_VF	1
-#endif
 #endif
 #endif
 #define FULL_CHARGING_TIME	(6 * 60 *  60 * HZ)	/* 6hr */
@@ -111,36 +106,23 @@
 #endif
 
 #ifdef CONFIG_TARGET_LOCALE_NA
-#ifdef CONFIG_MACH_C1_NA_SPR_EPIC2_REV00
-#define EVENT_BLOCK_TEMP_ADC	       870
-#define HIGH_BLOCK_TEMP_ADC            830
+#define EVENT_BLOCK_TEMP_ADC		750
+#define HIGH_BLOCK_TEMP_ADC            715
 #define LOW_BLOCK_TEMP_ADC             502
-#define HIGH_RECOVER_TEMP_ADC          799
-#define LOW_RECOVER_TEMP_ADC           516
-
-#define HIGH_BLOCK_TEMP_ADC_LPM        830
-#define LOW_BLOCK_TEMP_ADC_LPM         506
-#define HIGH_RECOVER_TEMP_ADC_LPM      799
-#define LOW_RECOVER_TEMP_ADC_LPM       512
-#else
-#define EVENT_BLOCK_TEMP_ADC           777
-#define HIGH_BLOCK_TEMP_ADC            729
-#define LOW_BLOCK_TEMP_ADC             502
-#define HIGH_RECOVER_TEMP_ADC          699
-#define LOW_RECOVER_TEMP_ADC           516
+#define HIGH_RECOVER_TEMP_ADC          690
+#define LOW_RECOVER_TEMP_ADC           510
 
 #define HIGH_BLOCK_TEMP_ADC_LPM        710
-#define LOW_BLOCK_TEMP_ADC_LPM         506
+#define LOW_BLOCK_TEMP_ADC_LPM         508
 #define HIGH_RECOVER_TEMP_ADC_LPM      702
-#define LOW_RECOVER_TEMP_ADC_LPM       512
-#endif
+#define LOW_RECOVER_TEMP_ADC_LPM       514
 #elif defined(CONFIG_TARGET_LOCALE_NAATT)
 #define EVENT_BLOCK_TEMP			620
 #define HIGH_BLOCK_TEMP			490
 #define LOW_BLOCK_TEMP			(-30)
 
-#define EVENT_RECOVER_TEMP		430
-#define HIGH_RECOVER_TEMP		430
+#define EVENT_RECOVER_TEMP		420
+#define HIGH_RECOVER_TEMP		420
 #define LOW_RECOVER_TEMP		0
 #else
 #define HIGH_BLOCK_TEMP			650
@@ -149,13 +131,8 @@
 #define LOW_RECOVER_TEMP		0
 #endif
 
-#if defined(CONFIG_TARGET_LOCALE_NAATT)
-#define HIGH_DEC_CURR_TEMP			410
-#define HIGH_INC_CURR_TEMP			380
-#endif
-
 #ifdef CONFIG_TARGET_LOCALE_NA
-#define CURRENT_OF_FULL_CHG			350
+#define CURRENT_OF_FULL_CHG			550
 #else
 #define CURRENT_OF_FULL_CHG			520
 #endif
@@ -208,14 +185,6 @@ enum {
 	BAT_DETECTED
 };
 
-#if defined(CONFIG_TARGET_LOCALE_NAATT)
-enum batt_temp_extra {
-	BATT_TEMP_EXT_NONE = 0,
-	BATT_TEMP_EXT_CAMCORDING_NORMAL,
-	BATT_TEMP_EXT_CAMCORDING_HIGH,
-};
-#endif
-
 static ssize_t sec_bat_show_property(struct device *dev,
 				     struct device_attribute *attr, char *buf);
 
@@ -259,10 +228,6 @@ struct sec_bat_info {
 	int batt_temp_high_cnt;
 	int batt_temp_low_cnt;
 	int batt_temp_recover_cnt;
-#if defined(CONFIG_TARGET_LOCALE_NAATT)
-	enum batt_temp_extra batt_temp_ext;
-	enum batt_temp_extra batt_temp_ext_pre;
-#endif
 	unsigned int batt_health;
 	unsigned int batt_vcell;
 	unsigned int batt_vfocv;
@@ -329,10 +294,7 @@ struct sec_bat_info {
 	unsigned int vf_check_interval;
 	struct delayed_work vf_check_work;
 #endif
-#if defined(CONFIG_TARGET_LOCALE_NAATT)
-	bool (*get_recording_state)(void);
-	int (*get_current_cable_type_is_jig)(void);
-#endif
+
 	int batt_tmu_status;
 };
 
@@ -354,10 +316,6 @@ static enum power_supply_property sec_battery_props[] = {
 static enum power_supply_property sec_power_props[] = {
 	POWER_SUPPLY_PROP_ONLINE,
 };
-
-#ifdef CONFIG_TARGET_LOCALE_NA
-static struct sec_bat_info *pchg = NULL ;
-#endif
 
 static int sec_bat_enable_charging(struct sec_bat_info *info,
 	bool enable);
@@ -466,13 +424,6 @@ static int sec_bat_get_property(struct power_supply *ps,
 			return -EINVAL;
 		break;
 	case POWER_SUPPLY_PROP_CAPACITY:
-#ifdef CONFIG_TARGET_LOCALE_NA
-		if (info->charging_status !=POWER_SUPPLY_STATUS_FULL && info->batt_soc == 100) {
-			val->intval = 99;
-			break;
-		}
-#endif /*CONFIG_TARGET_LOCALE_NA*/
-
 		if (info->charging_status == POWER_SUPPLY_STATUS_FULL) {
 			val->intval = 100;
 			break;
@@ -926,14 +877,6 @@ static int sec_bat_check_temper(struct sec_bat_info *info)
 
 		}
 	}
-
-	if (info->cable_type ==CABLE_TYPE_NONE) {
-		if (info->batt_health == POWER_SUPPLY_HEALTH_OVERHEAT || info->batt_health == POWER_SUPPLY_HEALTH_COLD) {
-			info->batt_health = POWER_SUPPLY_HEALTH_GOOD;
-			goto skip;
-		}
-	}
-
 	if (info->batt_temp_high_cnt >= TEMP_BLOCK_COUNT)
 		info->batt_health = POWER_SUPPLY_HEALTH_OVERHEAT;
 	else if (info->batt_temp_low_cnt >= TEMP_BLOCK_COUNT)
@@ -946,7 +889,7 @@ static int sec_bat_check_temper(struct sec_bat_info *info)
 
 	/*else if (info->batt_temp_recover_cnt >= TEMP_BLOCK_COUNT)
 		info->batt_health = POWER_SUPPLY_HEALTH_GOOD;*/
-skip:
+
 	/* Set temperature to fuel gauge */
 	if (info->fuel_gauge_name) {
 		value.intval = info->batt_temp / 10;
@@ -962,18 +905,14 @@ skip:
 	return temp;
 }
 
-static void sec_bat_get_dcinovp(struct sec_bat_info *info)
+static int sec_bat_get_dcinovp(struct sec_bat_info *info)
 {
 	struct power_supply *psy = power_supply_get_by_name(info->charger_name);
 	union power_supply_propval value;
 
-	if (info->slate_test_mode) {
-		info->charging_status = POWER_SUPPLY_STATUS_DISCHARGING;
-		info->cable_type = CABLE_TYPE_NONE;
-	} else {
-		psy->get_property(psy, POWER_SUPPLY_PROP_STATUS, &value);
-		info->charging_status = value.intval;
-	}
+	psy->get_property(psy, POWER_SUPPLY_PROP_STATUS, &value);
+
+	return value.intval;
 }
 
 #elif defined(CONFIG_TARGET_LOCALE_NAATT)
@@ -1049,31 +988,6 @@ static int sec_bat_check_temper(struct sec_bat_info *info)
 			info->batt_temp_recover_cnt = 0;
 		}
 	} else {
-#if defined(CONFIG_TARGET_LOCALE_NAATT)
-	info->batt_temp_ext_pre = info->batt_temp_ext;
-	switch (info->batt_temp_ext) {
-	case BATT_TEMP_EXT_NONE:
-		if (info->get_recording_state && info->get_recording_state())
-			info->batt_temp_ext = BATT_TEMP_EXT_CAMCORDING_NORMAL;
-		break;
-	case BATT_TEMP_EXT_CAMCORDING_NORMAL:
-		if (!info->get_recording_state())
-			info->batt_temp_ext = BATT_TEMP_EXT_NONE;
-		else if (temp >= HIGH_DEC_CURR_TEMP)
-			info->batt_temp_ext = BATT_TEMP_EXT_CAMCORDING_HIGH;
-		break;
-	case BATT_TEMP_EXT_CAMCORDING_HIGH:
-		if (!info->get_recording_state())
-			info->batt_temp_ext = BATT_TEMP_EXT_NONE;
-		else if (temp <= HIGH_INC_CURR_TEMP)
-			info->batt_temp_ext = BATT_TEMP_EXT_CAMCORDING_NORMAL;
-		break;
-	default:
-		break;
-	}
-	dev_info(info->dev, "%s: batt_temp_ext_pre=%d, batt_temp_ext=%d\n",
-		__func__, info->batt_temp_ext_pre, info->batt_temp_ext);
-#endif
 		/*printk("[%s] nomal temp is applied\n", __func__);*/
 		if (temp >= HIGH_BLOCK_TEMP) {
 			if (health != POWER_SUPPLY_HEALTH_OVERHEAT &&
@@ -1106,11 +1020,6 @@ static int sec_bat_check_temper(struct sec_bat_info *info)
 			info->batt_temp_low_cnt = 0;
 			info->batt_temp_recover_cnt = 0;
 		}
-	}
-
-	if (info->cable_type == CABLE_TYPE_NONE) {
-			info->batt_temp_high_cnt = 0;
-			info->batt_temp_low_cnt = 0;
 	}
 
 	if (info->batt_temp_high_cnt >= TEMP_BLOCK_COUNT)
@@ -1279,6 +1188,17 @@ static void sec_bat_update_info(struct sec_bat_info *info)
 	info->batt_soc = sec_bat_get_fuelgauge_data(info, FG_T_SOC);
 	info->batt_vcell = sec_bat_get_fuelgauge_data(info, FG_T_VCELL);
 	info->batt_vfocv = sec_bat_get_fuelgauge_data(info, FG_T_VFOCV);
+
+#ifdef SPRINT_SLATE_TEST
+	if (info->slate_test_mode) {
+		info->charging_status = POWER_SUPPLY_STATUS_DISCHARGING;
+		info->cable_type = CABLE_TYPE_NONE;
+	} else {
+	if (info->batt_full_status == BATT_NOT_FULL)
+		info->charging_status = sec_bat_get_dcinovp(info);
+}
+#endif
+
 }
 
 static int sec_bat_enable_charging_main(struct sec_bat_info *info, bool enable)
@@ -1389,12 +1309,7 @@ static int sec_bat_enable_charging_sub(struct sec_bat_info *info, bool enable)
 			break;
 		case CABLE_TYPE_AC:
 			val_type.intval = POWER_SUPPLY_STATUS_CHARGING;
-#if defined(CONFIG_TARGET_LOCALE_NAATT)
-			if (info->batt_temp_ext == BATT_TEMP_EXT_CAMCORDING_HIGH)
-				val_chg_current.intval = 450;	/* mA */
-			else
-#endif
-				val_chg_current.intval = 650;	/* mA */
+			val_chg_current.intval = 650;	/* mA */
 			break;
 		case CABLE_TYPE_MISC:
 			val_type.intval = POWER_SUPPLY_STATUS_CHARGING;
@@ -1475,10 +1390,6 @@ static void sec_bat_cable_work(struct work_struct *work)
 			info->batt_temp_high_cnt = 0;
 			info->batt_temp_low_cnt = 0;
 			info->batt_temp_recover_cnt = 0;
-#if defined(CONFIG_TARGET_LOCALE_NAATT)
-			info->batt_temp_ext = BATT_TEMP_EXT_NONE;
-			info->batt_temp_ext_pre = BATT_TEMP_EXT_NONE;
-#endif
 			wake_lock_timeout(&info->vbus_wake_lock, HZ * 5);
 		}
 		break;
@@ -1572,9 +1483,6 @@ static void sec_bat_check_vf_adc(struct sec_bat_info *info)
 	int adc;
 	static int invalid_vf_count;
 
-	if( info->get_current_cable_type_is_jig())
-		return;
-
 	if (system_rev == 11)
 		return;
 
@@ -1590,7 +1498,6 @@ static void sec_bat_check_vf_adc(struct sec_bat_info *info)
 	if ((info->batt_vf_adc > MAX_VF || info->batt_vf_adc < MIN_VF)
 		&& ((info->cable_type == CABLE_TYPE_AC)
 		|| info->cable_type == CABLE_TYPE_USB)) {
-
 		invalid_vf_count++;
 
 		printk(KERN_DEBUG "[%s] invalid VF is detected... (vf = %d, count = %d)\n",
@@ -1615,20 +1522,6 @@ static void sec_bat_check_vf(struct sec_bat_info *info)
 	union power_supply_propval value;
 	int ret;
 
-#ifdef CONFIG_MACH_P6_REV02
-	int adc;
-
-	mutex_lock(&info->adclock);
-	adc = sec_bat_get_adc_data(info, ADC_CH_VF);
-	mutex_unlock(&info->adclock);
-
-	dev_info(info->dev,  "%s: adc (%d)\n",  __func__, adc);
-
-	if (adc > MAX_VF_ADC || adc < MIN_VF_ADC)
-		value.intval = BAT_NOT_DETECTED;
-	else
-		value.intval = BAT_DETECTED;
-#else
 	ret = psy->get_property(psy, POWER_SUPPLY_PROP_PRESENT, &value);
 
 	if (ret < 0) {
@@ -1636,7 +1529,6 @@ static void sec_bat_check_vf(struct sec_bat_info *info)
 			__func__, ret);
 		return;
 	}
-#endif
 
 	if (value.intval == BAT_NOT_DETECTED) {
 		if (info->present_count < BAT_DET_COUNT)
@@ -1795,11 +1687,6 @@ static void sec_bat_monitor_work(struct work_struct *work)
 	sec_bat_check_vf(info);
 #endif
 	sec_bat_update_info(info);
-#ifdef SPRINT_SLATE_TEST
-	if (info->charging_status != POWER_SUPPLY_STATUS_FULL && info->batt_health == POWER_SUPPLY_HEALTH_GOOD)
-		if (info->batt_temp_recover_cnt == 0 || info->batt_temp_recover_cnt > 3)
-			sec_bat_get_dcinovp(info);
-#endif
 	if (sec_bat_charging_time_management(info))
 		goto full_charged;
 
@@ -1875,19 +1762,6 @@ static void sec_bat_monitor_work(struct work_struct *work)
 		break;
 	case POWER_SUPPLY_STATUS_CHARGING:
 		switch (info->batt_health) {
-#if defined(CONFIG_TARGET_LOCALE_NAATT)
-		case POWER_SUPPLY_HEALTH_GOOD:
-			if (info->batt_temp_ext_pre != info->batt_temp_ext) {
-				sec_bat_enable_charging(info, false);
-
-				if (!sec_bat_enable_charging(info, true)) {
-					dev_info(info->dev,
-					"%s: Changed charging current\n",
-					__func__);
-				}
-			}
-			break;
-#endif
 		case POWER_SUPPLY_HEALTH_OVERHEAT:
 		case POWER_SUPPLY_HEALTH_COLD:
 		case POWER_SUPPLY_HEALTH_OVERVOLTAGE:
@@ -2029,11 +1903,11 @@ static struct device_attribute sec_battery_attrs[] = {
 #endif
 #if defined(CONFIG_TARGET_LOCALE_NAATT)
 	SEC_BATTERY_ATTR(batt_v_f_adc),
-	SEC_BATTERY_ATTR(batt_voice_call_2g),
-	SEC_BATTERY_ATTR(batt_voice_call_3g),
-	SEC_BATTERY_ATTR(batt_data_call),
+	SEC_BATTERY_ATTR(talk_gsm),
+	SEC_BATTERY_ATTR(talk_wcdma),
+	SEC_BATTERY_ATTR(data_call),
 	SEC_BATTERY_ATTR(wifi),
-	SEC_BATTERY_ATTR(batt_gps),
+	SEC_BATTERY_ATTR(gps),
 	SEC_BATTERY_ATTR(camera),
 #elif CONFIG_TARGET_LOCALE_NA
 	SEC_BATTERY_ATTR(call),
@@ -2147,12 +2021,6 @@ static void sec_bat_check_event_status(
 	return ;
 }
 
-int sec_bat_use_wimax(int onoff)
-{
-	struct sec_bat_info *info = pchg ;
-	sec_bat_check_event_status(info, onoff, USE_WIMAX) ;
-}
-EXPORT_SYMBOL(sec_bat_use_wimax) ;
 #endif
 
 static ssize_t sec_bat_show_property(struct device *dev,
@@ -2653,12 +2521,10 @@ static __devinit int sec_bat_probe(struct platform_device *pdev)
 		info->adc_channel = pdata->adc_channel;
 		info->use_sub_charger = false;
 	}
-	info->get_lpcharging_state = pdata->get_lpcharging_state;
 #if defined(CONFIG_TARGET_LOCALE_NAATT)
 	info->vf_adc_channel = pdata->adc_vf_channel;
-	info->get_recording_state = pdata->get_recording_state;
-	info->get_current_cable_type_is_jig = pdata->get_current_cable_type_is_jig;
 #endif
+	info->get_lpcharging_state = pdata->get_lpcharging_state;
 
 	info->psy_bat.name = "battery",
 	    info->psy_bat.type = POWER_SUPPLY_TYPE_BATTERY,
@@ -2805,10 +2671,6 @@ static __devinit int sec_bat_probe(struct platform_device *pdev)
 		sec_bat_polling_work);
 	schedule_delayed_work(&info->polling_work, 0);
 
-#ifdef CONFIG_TARGET_LOCALE_NA
-	pchg = info ; // using pointer - for wimax
-#endif
-
 #ifdef SEC_BATTERY_INDEPEDENT_VF_CHECK
 	INIT_DELAYED_WORK_DEFERRABLE(&info->vf_check_work,
 		sec_bat_vf_check_work);
@@ -2896,45 +2758,6 @@ static int sec_bat_resume(struct device *dev)
 	return 0;
 }
 
-#if defined(CONFIG_TARGET_LOCALE_NA)
-static void sec_bat_shutdown(struct device *dev)
-{
-	struct sec_bat_info *info = dev_get_drvdata(dev);
-	struct power_supply *psy_main, *psy_sub;
-	union power_supply_propval val_type;
-	int ret;
-
-	if (!info->use_sub_charger)
-		return;
-
-	psy_main = power_supply_get_by_name(info->charger_name);
-	psy_sub = power_supply_get_by_name(info->sub_charger_name);
-
-	if (!psy_main || !psy_sub) {
-		dev_err(info->dev, "%s: fail to get charger ps\n", __func__);
-		return;
-	}
-
-	val_type.intval = POWER_SUPPLY_STATUS_CHARGING;
-	ret = psy_main->set_property(psy_main, POWER_SUPPLY_PROP_STATUS, &val_type);
-	if (ret) {
-		dev_err(info->dev, "%s: fail to set charging status(%d)\n",
-			__func__, ret);
-		return;
-	}
-
-	val_type.intval = POWER_SUPPLY_STATUS_DISCHARGING;
-	ret = psy_sub->set_property(psy_sub, POWER_SUPPLY_PROP_STATUS, &val_type);
-	if (ret) {
-		dev_err(info->dev, "%s: fail to set charging status(%d)\n",
-			__func__, ret);
-		return;
-	}
-}
-#else
-#define sec_bat_shutdown	NULL
-#endif
-
 static const struct dev_pm_ops sec_bat_pm_ops = {
 	.suspend = sec_bat_suspend,
 	.resume = sec_bat_resume,
@@ -2945,7 +2768,6 @@ static struct platform_driver sec_bat_driver = {
 		   .name = "sec-battery",
 		   .owner = THIS_MODULE,
 		   .pm = &sec_bat_pm_ops,
-		   .shutdown = sec_bat_shutdown,
 		   },
 	.probe = sec_bat_probe,
 	.remove = __devexit_p(sec_bat_remove),

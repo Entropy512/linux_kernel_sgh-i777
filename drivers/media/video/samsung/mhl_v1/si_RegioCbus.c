@@ -2,7 +2,7 @@
 
 * 
 
-*   SiI9244 ? MHL Transmitter Driver
+*   SiI9244 - MHL Transmitter Driver
 
 *
 
@@ -18,7 +18,7 @@
 
 *
 
-* This program is distributed Â¡Â°as isÂ¡Â± WITHOUT ANY WARRANTY of any
+* This program is distributed ¡°as is¡± WITHOUT ANY WARRANTY of any
 
 * kind, whether express or implied; without even the implied warranty
 
@@ -29,8 +29,6 @@
 *
 
 *****************************************************************************/
-
-
 
 #include <linux/types.h>
 

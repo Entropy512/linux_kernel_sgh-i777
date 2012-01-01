@@ -70,9 +70,6 @@ void s3c_mshci_set_platdata(struct s3c_mshci_platdata *pd)
 	set->ext_cd_gpio_invert = pd->ext_cd_gpio_invert;
 	set->wp_gpio = pd->wp_gpio;
 	set->has_wp_gpio = pd->has_wp_gpio;
-#ifdef CONFIG_MACH_C1
-	set->int_power_gpio = pd->int_power_gpio;
-#endif
 
 	if (pd->max_width)
 		set->max_width = pd->max_width;

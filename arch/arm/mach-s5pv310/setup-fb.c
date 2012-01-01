@@ -748,7 +748,7 @@ int s3cfb_lcd_off(struct platform_device *pdev)
 	return 0;
 }
 
-#elif defined(CONFIG_FB_S3C_LD9040) || defined(CONFIG_FB_S3C_S6E63M0)
+#elif defined(CONFIG_FB_S3C_LD9040)
 void s3cfb_cfg_gpio(struct platform_device *pdev)
 {
 	int i;

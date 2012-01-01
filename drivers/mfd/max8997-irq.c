@@ -328,16 +328,12 @@ int max8997_irq_init(struct max8997_dev *max8997)
 
 	mutex_init(&max8997->irqlock);
 
-	/* Workaround
-	 * Just read 0x00 register because first I2C operation
-	 * is always failed.
-	 */
 	ret = max8997_read_reg(max8997->i2c, MAX8997_REG_ID, &pmic_id);
 	if (ret)
-		dev_err(max8997->dev, "%s: fail to read PMIC ID(%d)\n",
+		dev_err(max8997->dev, "%s: fail to read PMIC ID(0x%X)\n",
 				__func__, ret);
 	else
-		dev_info(max8997->dev, "%s: PMIC ID(%d)\n", __func__, pmic_id);
+		dev_info(max8997->dev, "%s: PMIC ID(0x%X)\n", __func__, pmic_id);
 
 	/* Mask the individual interrupt sources */
 	for (i = 0; i < MAX8997_NUM_IRQ_REGS; i++) {
