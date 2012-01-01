@@ -123,10 +123,6 @@ struct m5mo_focus {
 	unsigned int touch:1;
 
 	unsigned int mode;
-#if defined(CONFIG_TARGET_LOCALE_NA)
-	unsigned int ui_mode;
-	unsigned int mode_select;
-#endif
 	unsigned int status;
 
 	unsigned int pos_x;
@@ -140,13 +136,13 @@ struct m5mo_exif {
 	u16 iso;
 	int tv;			/* shutter speed */
 	int bv;			/* brightness */
-	int ebv;		/* exposure bias */
+	int ebv;		/* exposure bias */    
 };
 
 struct m5mo_state {
 	struct m5mo_platform_data *pdata;
 	struct v4l2_subdev sd;
-
+	
 	struct wake_lock wake_lock;
 
 	struct m5mo_isp isp;
@@ -262,7 +258,6 @@ struct m5mo_state {
 #define M5MO_LENS_AF_MODE	0x01
 #define M5MO_LENS_AF_START	0x02
 #define M5MO_LENS_AF_STATUS	0x03
-#define M5MO_LENS_AF_MODE_SELECT	0x05
 #define M5MO_LENS_AF_UPBYTE_STEP	0x06
 #define M5MO_LENS_AF_LOWBYTE_STEP	0x07
 #define M5MO_LENS_AF_CAL	0x1D

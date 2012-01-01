@@ -38,11 +38,7 @@
 
 #define MAX_ZONE_LIMIT		10
 /* keep this value if you support double-pressed concept */
-#ifdef CONFIG_TARGET_LOCALE_NAATT
-#define SEND_KEY_CHECK_TIME_MS	20		/* 20ms */
-#else
 #define SEND_KEY_CHECK_TIME_MS	40		/* 100ms */
-#endif
 #define WAKE_LOCK_TIME		(HZ * 5)	/* 5 sec */
 #define EAR_CHECK_LOOP_CNT	10
 

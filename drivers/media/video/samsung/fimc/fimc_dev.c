@@ -994,8 +994,7 @@ static inline int fimc_mmap_cap(struct file *filp, struct vm_area_struct *vma)
 	u32 size = vma->vm_end - vma->vm_start;
 	u32 pfn, idx = vma->vm_pgoff;
 
-	if (ctrl->cap->fmt.priv != V4L2_PIX_FMT_MODE_HDR)
-		vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
+	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
 	vma->vm_flags |= VM_RESERVED;
 
 	/*
@@ -1312,7 +1311,6 @@ static int fimc_open(struct file *filp)
 		writel(0xff0062, qos_regs + 0xc);
 #endif
 
-#if !defined(CONFIG_MACH_Q1_REV02) && !defined(CONFIG_MACH_Q1_REV00)
 		if(ctrl->id == FIMC2) {
 			/* ioremap for register block */
 			qos_regs0 = ioremap(0x11600400, 0x10);
@@ -1343,7 +1341,7 @@ static int fimc_open(struct file *filp)
 			iounmap(qos_regs1);
 			qos_regs1 = NULL;
 		}
-#endif
+
 	}
 	prv_data->ctrl = ctrl;
 	if (prv_data->ctrl->out != NULL) {
@@ -1439,7 +1437,6 @@ static int fimc_release(struct file *filp)
 		}
 /* #endif */
 #endif
-#if !defined(CONFIG_MACH_Q1_REV02) && !defined(CONFIG_MACH_Q1_REV00)
 		if(ctrl->id == FIMC2) {
 			/* ioremap for register block */
 			qos_regs0 = ioremap(0x11600400, 0x10);
@@ -1465,7 +1462,6 @@ static int fimc_release(struct file *filp)
 			iounmap(qos_regs1);
 			qos_regs1 = NULL;
 		}
-#endif
 
 	}
 	if (ctrl->out) {
@@ -2097,7 +2093,7 @@ static inline int fimc_suspend_cap(struct fimc_control *ctrl)
 
 			if (ctrl->cam->cam_power)
 				ctrl->cam->cam_power(0);
-
+			
 			/* shutdown the MCLK */
 			clk_disable(ctrl->cam->clk);
 			fimc->mclk_status = CAM_MCLK_OFF;
@@ -2325,9 +2321,8 @@ static inline int fimc_resume_cap(struct fimc_control *ctrl)
 {
 	struct fimc_global *fimc = get_fimc_dev();
 	int tmp;
-	u32 timeout;
-
 	fimc_dbg("%s\n", __func__);
+	u32 timeout;
 
 	__raw_writel(S5P_INT_LOCAL_PWR_EN, S5P_PMU_CAM_CONF);
 
@@ -2358,7 +2353,7 @@ static inline int fimc_resume_cap(struct fimc_control *ctrl)
 			clk_enable(ctrl->cam->clk);
 			fimc->mclk_status = CAM_MCLK_ON;
 			fimc_info1("clock for camera: %d\n", ctrl->cam->clk_rate);
-
+		
 			if (ctrl->cam->cam_power)
 				ctrl->cam->cam_power(1);
 

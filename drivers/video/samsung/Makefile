@@ -14,7 +14,6 @@ obj-$(CONFIG_FB_S3C_AMS369FG06)	+= s3cfb_ams369fg06.o
 obj-$(CONFIG_FB_S3C_TL2796)	+= s3cfb_tl2796.o
 obj-$(CONFIG_FB_S3C_MDNIE)      += s3cfb_mdnie.o s3cfb_ielcd.o
 obj-$(CONFIG_FB_S3C_LD9040)	+= ld9040.o
-obj-$(CONFIG_FB_S3C_S6E63M0)	+= s3cfb_s6e63m0.o
 obj-$(CONFIG_FB_S3C_S6E8AA0)	+= s3cfb_s6e8aa0.o
 obj-$(CONFIG_FB_S3C_S6D6AA0)	+= s3cfb_s6d6aa0.o
 obj-$(CONFIG_FB_S3C_MIPI_LCD)   += s5p_dsim_lowlevel.o

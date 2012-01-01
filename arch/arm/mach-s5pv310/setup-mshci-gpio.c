@@ -129,24 +129,6 @@ void s5pv310_setup_mshci_init_card(struct platform_device *dev)
 }
 #endif
 
-#ifdef CONFIG_MACH_C1
-void s5pv310_setup_mshci_set_power(struct platform_device *dev, int en)
-{
-	struct s3c_mshci_platdata *pdata = dev->dev.platform_data;
-
-	if (pdata->int_power_gpio) {
-		if (en) {
-			gpio_set_value(pdata->int_power_gpio, 1);
-			pr_info("%s : internal MMC Card ON samsung-mshc.\n",
-					__func__);
-		} else {
-			gpio_set_value(pdata->int_power_gpio, 0);
-			pr_info("%s : internal MMC Card OFF samsung-mshc.\n",
-					__func__);
-		}
-	}
-}
-#endif
 
 void s5pv310_setup_mshci_shutdown()
 {

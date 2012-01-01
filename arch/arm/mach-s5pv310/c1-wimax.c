@@ -22,36 +22,6 @@ extern int wimax_pmic_set_voltage();
 extern int s3c_bat_use_wimax(int onoff);
 
 static struct wimax_cfg wimax_config;
-
-void wimax_on_pin_conf(int onoff)
-{
-	int gpio;
-	if (onoff) {
-
-		for (gpio = S5PV310_GPK3(0); gpio < S5PV310_GPK3(2); gpio++) {
-			s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(2));
-			s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
-		}
-
-		for (gpio = S5PV310_GPK3(3); gpio <= S5PV310_GPK3(6); gpio++) {
-			s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(2));
-			s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
-		}
-
-	} else {
-		for (gpio = S5PV310_GPK3(0); gpio < S5PV310_GPK3(2); gpio++) {
-			s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(0));
-			s3c_gpio_setpull(gpio, S3C_GPIO_PULL_DOWN);
-		}
-		for (gpio = S5PV310_GPK3(3); gpio <= S5PV310_GPK3(6); gpio++) {
-			s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(0));
-			s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
-		}
-
-	}
-
-}
-
 static void store_uart_path(void)
 {
 	wimax_config.uart_sel = gpio_get_value(GPIO_UART_SEL);
@@ -197,7 +167,8 @@ static int gpio_wimax_power(int enable)
 	while (!wimax_config.card_removed)
 		msleep(100);
 	dump_debug("Wimax power ON");
-	if (wimax_config.wimax_mode != SDIO_MODE) {
+	wimax_init_gpios();
+	if (wimax_config.wimax_mode != SDIO_MODE){
 		switch_usb_wimax();
 		s3c_bat_use_wimax(1);
 	}
@@ -206,36 +177,29 @@ static int gpio_wimax_power(int enable)
 		switch_uart_wimax();
 	}
 	switch_eeprom_wimax();
-	wimax_on_pin_conf(1);
 	gpio_set_value(GPIO_WIMAX_EN, GPIO_LEVEL_HIGH);
-	wimax_init_gpios();
-	wimax_pmic_set_voltage();
 	dump_debug("RESET");
+	wimax_pmic_set_voltage();
 	gpio_set_value(GPIO_WIMAX_RESET_N, GPIO_LEVEL_LOW);
-	mdelay(3);
+	msleep(10);
 	gpio_set_value(GPIO_WIMAX_RESET_N, GPIO_LEVEL_HIGH);
-	msleep(400);
+	mdelay(500);
 	wimax_hsmmc_presence_check();
+	msleep(500);
 	return WIMAX_POWER_SUCCESS;
  wimax_power_off:
 	if (!gpio_get_value(GPIO_WIMAX_EN)) {
 		dump_debug("Already Wimax powered OFF");
 		return WIMAX_ALREADY_POWER_OFF;	/* already power off */
 	}
-	while (!wimax_config.powerup_done) {
-		msleep(500);
-		dump_debug("Wimax waiting for power Off ");
-	}
-	msleep(500);
 	wimax_deinit_gpios();
 	dump_debug("Wimax power OFF");
 	wimax_hsmmc_presence_check();
 	msleep(500);
 
-	if (wimax_config.wimax_mode != SDIO_MODE) {
+	if (wimax_config.wimax_mode != SDIO_MODE){
 		s3c_bat_use_wimax(0);
 	}
-	wimax_on_pin_conf(0);
 
 	return WIMAX_POWER_SUCCESS;
 }
@@ -247,8 +211,10 @@ static void wimax_deinit_gpios(void)
 	gpio_set_value(GPIO_WIMAX_DBGEN_28V, GPIO_LEVEL_LOW);
 	s3c_gpio_cfgpin(GPIO_WIMAX_I2C_CON, S3C_GPIO_OUTPUT);
 	s3c_gpio_setpull(GPIO_WIMAX_I2C_CON, S3C_GPIO_PULL_NONE);
-	gpio_set_value(GPIO_WIMAX_I2C_CON, GPIO_LEVEL_HIGH);
-
+	switch_eeprom_wimax();
+	s3c_gpio_cfgpin(GPIO_WIMAX_INT, S3C_GPIO_OUTPUT);
+	s3c_gpio_setpull(GPIO_WIMAX_INT, S3C_GPIO_PULL_NONE);
+	gpio_set_value(GPIO_WIMAX_INT, GPIO_LEVEL_LOW);
 	s3c_gpio_cfgpin(GPIO_WIMAX_WAKEUP, S3C_GPIO_OUTPUT);
 	s3c_gpio_setpull(GPIO_WIMAX_WAKEUP, S3C_GPIO_PULL_NONE);
 	gpio_set_value(GPIO_WIMAX_WAKEUP, GPIO_LEVEL_LOW);
@@ -284,19 +250,6 @@ static void wimax_deinit_gpios(void)
 	s3c_gpio_setpull(GPIO_UART_SEL1, S3C_GPIO_PULL_NONE);
 	s3c_gpio_cfgpin(GPIO_UART_SEL, S3C_GPIO_OUTPUT);
 	s3c_gpio_setpull(GPIO_UART_SEL, S3C_GPIO_PULL_NONE);
-
-	s3c_gpio_cfgpin(GPIO_CMC_SCL_18V, S3C_GPIO_OUTPUT);
-	s3c_gpio_setpull(GPIO_CMC_SCL_18V, S3C_GPIO_PULL_NONE);
-	gpio_set_value(GPIO_CMC_SCL_18V, GPIO_LEVEL_LOW);
-
-	s3c_gpio_cfgpin(GPIO_CMC_SDA_18V, S3C_GPIO_OUTPUT);
-	s3c_gpio_setpull(GPIO_CMC_SDA_18V, S3C_GPIO_PULL_NONE);
-	gpio_set_value(GPIO_CMC_SDA_18V, GPIO_LEVEL_LOW);
-
-	s3c_gpio_cfgpin(GPIO_WIMAX_INT, S3C_GPIO_OUTPUT);
-	s3c_gpio_setpull(GPIO_WIMAX_INT, S3C_GPIO_PULL_NONE);
-	gpio_set_value(GPIO_WIMAX_INT, GPIO_LEVEL_LOW);
-
 	switch_usb_ap();
 }
 

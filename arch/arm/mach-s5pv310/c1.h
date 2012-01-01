@@ -6,7 +6,6 @@
 #define __C1_H__
 
 extern struct ld9040_panel_data c1_panel_data;
-extern struct s6e63m0_panel_data epic2_panel_data;
 
 #ifdef CONFIG_WIMAX_CMC
 extern struct platform_device s3c_device_cmc732;

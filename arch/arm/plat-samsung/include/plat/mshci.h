@@ -66,7 +66,6 @@ struct s3c_mshci_platdata {
 
 	int		wp_gpio;
 	int		ext_cd_gpio;
-	int		int_power_gpio;
 	bool		ext_cd_gpio_invert;
 	bool		has_wp_gpio;
 	int	(*ext_cd_init)(void (*notify_func)(struct platform_device *,
@@ -82,7 +81,7 @@ struct s3c_mshci_platdata {
 #ifdef CONFIG_MACH_C1
 	void	(*init_card)(struct platform_device *dev);
 #endif
-	void	(*set_power)(struct platform_device *dev, int en);
+
 	void	(*cfg_card)(struct platform_device *dev,
 			    void __iomem *regbase,
 			    struct mmc_ios *ios,
@@ -151,10 +150,6 @@ extern void s5pv310_setup_mshci_init_card(struct platform_device *dev);
 
 extern void s5pv310_setup_mshci_shutdown(void);
 
-#ifdef CONFIG_MACH_C1
-extern void s5pv310_setup_mshci_set_power(struct platform_device *dev, int en);
-#endif
-
 #ifdef CONFIG_S5P_DEV_MSHC
 static inline void s5pv310_default_mshci(void)
 {
@@ -171,9 +166,6 @@ static inline void s5pv310_default_mshci(void)
 #endif
 
 	s3c_mshci_def_platdata.shutdown = s5pv310_setup_mshci_shutdown;
-#ifdef CONFIG_MACH_C1
-	s3c_mshci_def_platdata.set_power = s5pv310_setup_mshci_set_power;
-#endif
 }
 #else
 static inline void s5pv310_default_mshci(void) { }

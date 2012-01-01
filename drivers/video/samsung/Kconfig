@@ -117,23 +117,13 @@ config FB_S3C_AMS369FG06
 
 config FB_S3C_LD9040
         bool "LD9040"
-	depends on MACH_C1 && !MACH_C1_NA_SPR_EPIC2_REV00
+	depends on MACH_C1
 	select LCD_CLASS_DEVICE
 	select SPI
 	select SPI_GPIO
 	select SPI_BITBANG
 	help
 	  This enables support for Samsung LD9040 LCD panel
-
-config FB_S3C_S6E63M0
-        bool "S6E63M0"
-	depends on MACH_C1 && MACH_C1_NA_SPR_EPIC2_REV00
-	select LCD_CLASS_DEVICE
-	select SPI
-	select SPI_GPIO
-	select SPI_BITBANG
-	help
-	  This enables support for Samsung S6E63M0 LCD panel
 
 config FB_S3C_MIPI_LCD
 	bool "MIPI LCD"
