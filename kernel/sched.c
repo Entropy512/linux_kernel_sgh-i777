@@ -3716,8 +3716,6 @@ need_resched_nonpreemptible:
 
 	if (unlikely(!rq->nr_running))
 		idle_balance(cpu, rq);
-	else
-		trace_sched_load(rq->nr_running, rq->avg_idle);
 
 	put_prev_task(rq, prev);
 	next = pick_next_task(rq);
