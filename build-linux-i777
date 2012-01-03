@@ -5,7 +5,7 @@ cp -R ../initramfs_sgh-i777/* kernel/usr/initramfs
 rm $(find kernel/usr/initramfs -name EMPTY_DIRECTORY -print)
 rm -rf $(find kernel/usr/initramfs -name .git -print)
 make dd_i777_defconfig
-make -j16 && cp -a $(find . -name *.ko -print |grep -v initramfs) kernel/usr/initramfs/lib/modules/ && make -j16
+make -j8 && cp -a $(find . -name *.ko -print |grep -v initramfs) kernel/usr/initramfs/lib/modules/ && make -j8
 # adb shell reboot download
 # sleep 5
 # heimdall flash --kernel arch/arm/boot/zImage
