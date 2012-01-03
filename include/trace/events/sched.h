@@ -385,24 +385,24 @@ TRACE_EVENT(sched_stat_runtime,
  */
 TRACE_EVENT(sched_load,
 
-	TP_PROTO(int cpu, unsigned long nr_running, unsigned long load),
+	TP_PROTO(unsigned long nr_running, u64 avg_idle),
 
-	TP_ARGS(cpu, nr_running, load),
+	TP_ARGS(nr_running, avg_idle),
 
 	TP_STRUCT__entry(
 		__field(	int,		cpu)
 		__field(	unsigned long,	nr_running)
-		__field(	unsigned long,	load)
+		__field(	u64,		avg_idle)
 	),
 
 	TP_fast_assign(
-		__entry->cpu = cpu;
+		__entry->cpu = smp_processor_id();
 		__entry->nr_running = nr_running;
-		__entry->load = load;
+		__entry->avg_idle = avg_idle;
 	),
 
-	TP_printk("cpu=%d nr_running=%lu load=%lu",
-		  __entry->cpu, __entry->nr_running, __entry->load)
+	TP_printk("cpu=%d nr_running=%lu avg_idle=%llu",
+		  __entry->cpu, __entry->nr_running, __entry->avg_idle)
 );
 
 #endif /* _TRACE_SCHED_H */
