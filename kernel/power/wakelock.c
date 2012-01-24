@@ -30,6 +30,7 @@ enum {
 	DEBUG_SUSPEND = 1U << 2,
 	DEBUG_EXPIRE = 1U << 3,
 	DEBUG_WAKE_LOCK = 1U << 4,
+	DEBUG_DESTROY = 1U << 5,
 };
 static int debug_mask = DEBUG_EXIT_SUSPEND | DEBUG_WAKEUP;
 module_param_named(debug_mask, debug_mask, int, S_IRUGO | S_IWUSR | S_IWGRP);
@@ -45,7 +46,6 @@ static LIST_HEAD(inactive_locks);
 static struct list_head active_wake_locks[WAKE_LOCK_TYPE_COUNT];
 static int current_event_num;
 struct workqueue_struct *suspend_work_queue;
-struct workqueue_struct *sync_work_queue;
 struct wake_lock main_wake_lock;
 struct wake_lock sync_wake_lock;
 suspend_state_t requested_suspend_state = PM_SUSPEND_MEM;
@@ -366,7 +366,7 @@ EXPORT_SYMBOL(wake_lock_init);
 void wake_lock_destroy(struct wake_lock *lock)
 {
 	unsigned long irqflags;
-	if (debug_mask & DEBUG_WAKE_LOCK)
+	if (debug_mask & (DEBUG_WAKE_LOCK | DEBUG_DESTROY))
 		pr_info("wake_lock_destroy name=%s\n", lock->name);
 	spin_lock_irqsave(&list_lock, irqflags);
 	lock->flags &= ~WAKE_LOCK_INITIALIZED;
@@ -571,20 +571,12 @@ static int __init wakelocks_init(void)
 		goto err_suspend_work_queue;
 	}
 
-    sync_work_queue = create_singlethread_workqueue("sync_system_work");
-	if (sync_work_queue == NULL) {
-		ret = -ENOMEM;
-		goto err_sync_work_queue;
-	}
-
 #ifdef CONFIG_WAKELOCK_STAT
 	proc_create("wakelocks", S_IRUGO, NULL, &wakelock_stats_fops);
 #endif
 
 	return 0;
 
-err_sync_work_queue:
-	destroy_workqueue(suspend_work_queue);
 err_suspend_work_queue:
 	platform_driver_unregister(&power_driver);
 err_platform_driver_register:
@@ -605,7 +597,6 @@ static void  __exit wakelocks_exit(void)
 	remove_proc_entry("wakelocks", NULL);
 #endif
 	destroy_workqueue(suspend_work_queue);
-	destroy_workqueue(sync_work_queue);
 	platform_driver_unregister(&power_driver);
 	platform_device_unregister(&power_device);
 	wake_lock_destroy(&unknown_wakeup);

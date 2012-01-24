@@ -3954,8 +3954,6 @@ need_resched_nonpreemptible:
 
 	pre_schedule(rq, prev);
 
-	trace_sched_load(cpu, rq->nr_running, rq->cpu_load[0]);
-
 	if (unlikely(!rq->nr_running))
 		idle_balance(cpu, rq);
 
