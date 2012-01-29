@@ -379,7 +379,7 @@ static struct gpio_init_data c1_init_gpios[] = {
 		.pud	= S3C_GPIO_PULL_NONE,
 		.drv	= S5P_GPIO_DRVSTR_LV1,
 	},
-#if defined(CONFIG_TARGET_LOCALE_NA)
+#if defined(CONFIG_TARGET_LOCALE_NA) || defined(CONFIG_TARGET_LOCALE_NAATT)
 	{
 		.num	= S5PV310_GPX3(5),
 		.cfg	= S3C_GPIO_INPUT,
@@ -1240,6 +1240,7 @@ static unsigned int c1_sleep_gpio_table[][3] = {
 #if defined(CONFIG_TARGET_LOCALE_NAATT)
 static unsigned int c1_exint_sleep_gpio_table[][3] = {
 	{ S5PV310_GPX2(4),	S3C_GPIO_SLP_INPUT, S3C_GPIO_PULL_DOWN},
+	{ S5PV310_GPX3(0),      S3C_GPIO_SLP_INPUT, S3C_GPIO_PULL_DOWN},
 	{ S5PV310_GPX3(5),	S3C_GPIO_SLP_INPUT, S3C_GPIO_PULL_DOWN},
 };
 #endif
