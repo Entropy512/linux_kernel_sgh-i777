@@ -45,6 +45,18 @@
 static DEFINE_MUTEX(port_mutex);
 
 /*
+ * Backport of GPS status hack from Tab 7 Plus sources
+ * (yes there is MACH_C1 stuff in them!)
+ * Allows cpuidle driver to determine if GPS is running
+ * Export of symbol here, actual logic in uart_close and uart_open
+ */
+
+#ifdef CONFIG_MACH_C1
+volatile int gps_is_running;
+EXPORT_SYMBOL(gps_is_running);
+#endif /* CONFIG_MACH_C1 */
+
+/*
  * lockdep: port->lock is initialized in two places, but we
  *          want only one lock-class:
  */
@@ -1286,6 +1298,17 @@ static void uart_close(struct tty_struct *tty, struct file *filp)
 
 	pr_debug("uart_close(%d) called\n", uport->line);
 
+	/*
+	 * Unset "GPS is running" flag
+	 */
+
+#ifdef CONFIG_MACH_C1
+        if (uport->line == 1) {
+                pr_info("%s: UART1 GPS not running\n", __func__);
+                gps_is_running = 0;
+        }
+#endif /* CONFIG_MACH_C1 */
+
 	mutex_lock(&port->mutex);
 
 	if (tty_hung_up_p(filp))
@@ -1616,6 +1639,17 @@ static int uart_open(struct tty_struct *tty, struct file *filp)
 
 	BUG_ON(!kernel_locked());
 	pr_debug("uart_open(%d) called\n", line);
+
+	/*
+	 *  Set "GPS is running" flag
+	 */
+
+#ifdef CONFIG_MACH_C1
+        if (line == 1) {
+                pr_info("%s: UART1 - GPS running\n", __func__);
+                gps_is_running = 1;
+        }
+#endif /* CONFIG_MACH_C1 */
 
 	/*
 	 * tty->driver->num won't change, so we won't fail here with
