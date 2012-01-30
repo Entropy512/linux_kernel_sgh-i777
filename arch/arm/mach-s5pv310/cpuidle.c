@@ -569,7 +569,7 @@ static int s5pv310_enter_core0_lpa(struct cpuidle_device *dev,
 	int idle_time;
 	unsigned long tmp;
 
-	pr_info("++%s\n", __func__);
+	//	pr_info("++%s\n", __func__);
 #ifdef CONFIG_SAMSUNG_LTE
 	gpio_set_value(GPIO_PDA_ACTIVE, 0);
 #endif
@@ -664,7 +664,7 @@ early_wakeup:
 	bt_uart_rts_ctrl(0);
 #endif
 
-	pr_info("--%s\n", __func__);
+	//	pr_info("--%s\n", __func__);
 	return idle_time;
 }
 
