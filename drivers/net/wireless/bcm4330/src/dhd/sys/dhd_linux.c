@@ -712,6 +712,8 @@ static void dhd_suspend_resume_helper(struct dhd_info *dhd, int val)
 	dhdp->in_suspend = val;
 	if (!dhdp->suspend_disable_flag)
 		dhd_set_suspend(val, dhdp);
+	else
+	        printk("bcm4330: early_suspend processing disabled, suspend_disable_flag is set by system.\n");
 	DHD_OS_WAKE_UNLOCK(dhdp);
 }
 
