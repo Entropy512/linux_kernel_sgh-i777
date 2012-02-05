@@ -62,6 +62,16 @@
 
 static struct mfc_dev *mfcdev;
 
+/*
+ * Export a symbol that lets other parts of the kernel know if MFC is running
+ * This is the groundwork for locking out AFTR mode in the new cpuidle backport
+ * as AFTR causes issues with video decoding for some people now that
+ * AFTR can get hit when residency is only 10 ms
+ */
+
+volatile int mfc_is_running;
+EXPORT_SYMBOL(mfc_is_running);
+
 static int get_free_inst_id(struct mfc_dev *dev)
 {
 	int slot = 0;
@@ -132,6 +142,11 @@ static int mfc_open(struct inode *inode, struct file *file)
 			ret = -ENODEV;
 			goto err_start_hw;
 		}
+		
+		/*
+		 * Indicate that MFC is running
+		 */
+		mfc_is_running = 1;
 	}
 
 	mfc_ctx = mfc_create_inst();
@@ -214,6 +229,11 @@ static int mfc_release(struct inode *inode, struct file *file)
 			mfc_err("power disable failed.\n");
 			goto err_pwr_disable;
 		}
+		/*
+		 * All MFC instances are shut down - MFC is no longer running
+		 */
+
+		mfc_is_running = 0;
 	} else {
 #if defined(SYSMMU_MFC_ON) && !defined(CONFIG_VIDEO_MFC_VCM_UMP)
 	mfc_clock_on();
