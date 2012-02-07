@@ -82,6 +82,7 @@ static int check_gps_uart_op(void);
 #ifdef CONFIG_SAMSUNG_LTE
 static int check_idpram_op(void);
 #endif
+static int check_mfc_op(void);
 
 enum op_state {
 	NO_OP = 0,
@@ -816,6 +817,16 @@ static int check_gps_uart_op(void)
 }
 #endif /* CONFIG_MACH_C1 */
 
+static int check_mfc_op(void)
+{
+        extern int mfc_is_running;
+
+        if (mfc_is_running)
+	        return IS_OP;
+
+	return NO_OP;
+}
+
 #ifdef CONFIG_SAMSUNG_LTE
 static int check_idpram_op(void)
 {
@@ -1012,6 +1023,13 @@ static int s5pv310_enter_aftr(struct cpuidle_device *dev,
 
 	if (new_state == &dev->states[0])
 		return s5pv310_enter_idle(dev, new_state);
+
+	/*
+	 * Lock out AFTR when MFC is active - some people have video decoding issues here
+	 */
+
+	if (check_mfc_op())
+	        return s5pv310_enter_idle(dev, new_state);
 
 	return (enable_mask & ENABLE_AFTR)
 		? s5pv310_enter_core0_aftr(dev, new_state)
