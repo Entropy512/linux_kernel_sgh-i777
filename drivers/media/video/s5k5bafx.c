@@ -1032,7 +1032,7 @@ static int s5k5bafx_init(struct v4l2_subdev *sd, u32 val)
 	cam_dbg("E\n");
 
 #ifdef CONFIG_CPU_FREQ
-	if (s5pv310_cpufreq_lock(DVFS_LOCK_ID_CAM, CPU_L0))
+	if (s5pv310_cpufreq_lock(DVFS_LOCK_ID_CAM, CPU_L2))
 		cam_err("failed lock DVFS\n");
 #endif
 	/* set initial regster value */

@@ -757,7 +757,7 @@ static int s5k6aafx_init(struct v4l2_subdev *sd, u32 val)
 #endif
 
 #if defined(CONFIG_CPU_FREQ)
-	if (s5pv310_cpufreq_lock(DVFS_LOCK_ID_CAM, CPU_L0))
+	if (s5pv310_cpufreq_lock(DVFS_LOCK_ID_CAM, CPU_L2))
 		printk(KERN_ERR "%s: error : failed lock DVFS\n", __func__);
 #endif
 
