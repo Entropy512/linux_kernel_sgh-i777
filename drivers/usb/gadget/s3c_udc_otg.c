@@ -1491,7 +1491,7 @@ static int s3c_change_usb_mode(int mode)
 
 		case USB_CABLE_ATTACHED:
 #ifdef USE_CPUFREQ_LOCK
-			s5pv310_cpufreq_lock(DVFS_LOCK_ID_USB, CPU_L0);
+			s5pv310_cpufreq_lock(DVFS_LOCK_ID_USB, CPU_L2);
 			CSY_DBG_ESS("cpufreq_lock\n");
 #endif
 			retval = s3c_vbus_enable(NULL, 1);
@@ -1524,7 +1524,7 @@ static int s3c_change_usb_mode(int mode)
 
 		case USB_OTGHOST_ATTACHED:
 #ifdef USE_CPUFREQ_LOCK_FOR_OTG_HOST
-			s5pv310_cpufreq_lock(DVFS_LOCK_ID_USB, CPU_L0);
+			s5pv310_cpufreq_lock(DVFS_LOCK_ID_USB, CPU_L2);
 			CSY_DBG_ESS("cpufreq_lock\n");
 #endif
 			if(!atomic_read(&dev->usb_status)!=USB_OTGHOST_ATTACHED) {
