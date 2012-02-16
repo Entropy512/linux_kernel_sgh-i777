@@ -290,9 +290,9 @@ static ssize_t dvfslock_ctrl(const char *buf, size_t count)
 		return -EINVAL;
 
 	if (dlevel)
-		dlevel = CPU_L1;
+		dlevel = CPU_L3;
 	else
-		dlevel = CPU_L0;
+		dlevel = CPU_L2;
 
 	printk(KERN_DEBUG "%s: level = %d, time =%d\n", __func__, dlevel, dtime_msec);
 
