@@ -183,7 +183,11 @@ static struct sleep_save s5pv310_lpa_save[] = {
 
 static struct sleep_save s5pv310_aftr[] = {
 	{ .reg = S5P_ARM_CORE0_LOWPWR			, .val = 0x0, },
+	{ .reg = S5P_DIS_IRQ_CORE0			, .val = 0x0, },
+	{ .reg = S5P_DIS_IRQ_CENTRAL0			, .val = 0x0, },
 	{ .reg = S5P_ARM_CORE1_LOWPWR			, .val = 0x0, },
+	{ .reg = S5P_DIS_IRQ_CORE1			, .val = 0x0, },
+	{ .reg = S5P_DIS_IRQ_CENTRAL1			, .val = 0x0, },
 	{ .reg = S5P_ARM_COMMON_LOWPWR			, .val = 0x0, },
 	{ .reg = S5P_L2_0_LOWPWR			, .val = 0x2, },
 	{ .reg = S5P_L2_1_LOWPWR			, .val = 0x2, },
@@ -253,7 +257,11 @@ static struct sleep_save s5pv310_aftr[] = {
 
 static struct sleep_save s5pv310_lpa[] = {
 	{ .reg = S5P_ARM_CORE0_LOWPWR			, .val = 0x0, },
+	{ .reg = S5P_DIS_IRQ_CORE0			, .val = 0x0, },
+	{ .reg = S5P_DIS_IRQ_CENTRAL0			, .val = 0x0, },
 	{ .reg = S5P_ARM_CORE1_LOWPWR			, .val = 0x0, },
+	{ .reg = S5P_DIS_IRQ_CORE1			, .val = 0x0, },
+	{ .reg = S5P_DIS_IRQ_CENTRAL1			, .val = 0x0, },
 	{ .reg = S5P_ARM_COMMON_LOWPWR			, .val = 0x0, },
 	{ .reg = S5P_L2_0_LOWPWR			, .val = 0x2, },
 	{ .reg = S5P_L2_1_LOWPWR			, .val = 0x2, },
