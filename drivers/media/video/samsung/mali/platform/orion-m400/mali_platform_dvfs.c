@@ -26,6 +26,7 @@
 
 #ifdef CONFIG_GPU_CLOCK_CONTROL
 extern int gpu_clock_control[2];
+extern int gpu_voltage_control[2];
 #endif
 
 #ifdef CONFIG_S5PV310_ASV
@@ -163,7 +164,11 @@ static unsigned int get_mali_dvfs_staus(void)
     /*error handling for current status -> set default step*/
 #ifdef CONFIG_REGULATOR
     /*change the voltage*/
+#ifdef CONFIG_GPU_CLOCK_CONTROL
+    mali_regulator_set_voltage(gpu_voltage_control[MALI_DVFS_DEFAULT_STEP], gpu_voltage_control[MALI_DVFS_DEFAULT_STEP]);
+#else
     mali_regulator_set_voltage(mali_dvfs[MALI_DVFS_DEFAULT_STEP].vol, mali_dvfs[MALI_DVFS_DEFAULT_STEP].vol);
+#endif
 #endif
     /*change the clock*/
 #ifdef CONFIG_GPU_CLOCK_CONTROL
@@ -225,7 +230,11 @@ static mali_bool set_mali_dvfs_staus(u32 step,mali_bool boostup)
     {
 #ifdef CONFIG_REGULATOR
         /*change the voltage*/
+#ifdef CONFIG_GPU_CLOCK_CONTROL
+    	mali_regulator_set_voltage(gpu_voltage_control[step], gpu_voltage_control[step]);
+#else
         mali_regulator_set_voltage(mali_dvfs[step].vol, mali_dvfs[step].vol);
+#endif
 #endif
         /*change the clock*/
 #ifdef CONFIG_GPU_CLOCK_CONTROL
@@ -244,7 +253,11 @@ static mali_bool set_mali_dvfs_staus(u32 step,mali_bool boostup)
 #endif
 #ifdef CONFIG_REGULATOR
         /*change the voltage*/
+#ifdef CONFIG_GPU_CLOCK_CONTROL
+    	mali_regulator_set_voltage(gpu_voltage_control[step], gpu_voltage_control[step]);
+#else
         mali_regulator_set_voltage(mali_dvfs[step].vol, mali_dvfs[step].vol);
+#endif
 #endif
     }
 
@@ -282,7 +295,11 @@ static mali_bool set_mali_dvfs_staus(u32 step,mali_bool boostup)
     /*error handling for current status -> set default step*/
 #ifdef CONFIG_REGULATOR
     /*change the voltage*/
+#ifdef CONFIG_GPU_CLOCK_CONTROL
+	mali_regulator_set_voltage(gpu_voltage_control[MALI_DVFS_DEFAULT_STEP], gpu_voltage_control[MALI_DVFS_DEFAULT_STEP]);
+#else
     mali_regulator_set_voltage(mali_dvfs[MALI_DVFS_DEFAULT_STEP].vol, mali_dvfs[MALI_DVFS_DEFAULT_STEP].vol);
+#endif
 #endif
     /*change the clock*/
 #ifdef CONFIG_GPU_CLOCK_CONTROL
