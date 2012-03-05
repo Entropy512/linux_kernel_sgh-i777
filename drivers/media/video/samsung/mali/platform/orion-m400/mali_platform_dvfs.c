@@ -24,11 +24,6 @@
 
 #include <asm/io.h>
 
-#ifdef CONFIG_GPU_CLOCK_CONTROL
-extern int gpu_clock_control[2];
-extern int gpu_voltage_control[2];
-#endif
-
 #ifdef CONFIG_S5PV310_ASV
 #include <mach/asv.h>
 #endif
@@ -36,35 +31,17 @@ extern int gpu_voltage_control[2];
 #include "mali_device_pause_resume.h"
 #include <linux/workqueue.h>
 
-#ifdef CONFIG_S5PV310_ASV
-#define MALI_DVFS_L2	1
-#define MALI_DVFS_L3	0
-#endif
-#define MALI_DVFS_STEPS 2 // 4
+#define MALI_DVFS_STEPS 3 // 4
 #define MALI_DVFS_WATING 10 // msec
-#define MALI_DVFS_STAY_AFTER_CHANGE 1 // stay count after clock change
 
 #define MALI_DVFS_CLK_DEBUG 0
 #define MALI_CLK_VERIFICATION 0
 #define MALI_DVFS_PAUSE_RESUME_TEST 0
-//#define MALI_DVFS_AGRESSIVE_POLICY
 
 #if MALI_CLK_VERIFICATION
 #define NUM_OF_TEST_LOOP 2
 #endif
 
-#if MALI_DVFS_PAUSE_RESUME_TEST // fast switch (only test)
-	#define GPU_DVFS_UP_THRESHOLD    120 //((int)((255*50)/100))   // 50%
-	#define GPU_DVFS_DOWN_THRESHOLD  90 //((int)((255*30)/100))   // 30%
-#else
-#ifdef MALI_DVFS_AGRESSIVE_POLICY
-	#define GPU_DVFS_UP_THRESHOLD	((int)((255*55)/100))   // 55%
-	#define GPU_DVFS_DOWN_THRESHOLD	((int)((255*25)/100))   // 25%
-#else
-	#define GPU_DVFS_UP_THRESHOLD	((int)((255*65)/100))   // 60%
-	#define GPU_DVFS_DOWN_THRESHOLD	((int)((255*30)/100))   // 30%
-#endif
-#endif
 static int bMaliDvfsRun=0;
 
 typedef struct mali_dvfs_tableTag{
@@ -84,20 +61,67 @@ mali_dvfs_status maliDvfsStatus;
 int mali_dvfs_control=0;
 
 /*dvfs table*/
+typedef struct mali_dvfs_thresholdTag{
+	unsigned int downthreshold;
+	unsigned int upthreshold;
+}mali_dvfs_threshold_table;
+
+typedef struct mali_dvfs_staycount{
+	unsigned int staycount;
+}mali_dvfs_staycount_table;
+
+mali_dvfs_staycount_table mali_dvfs_staycount[MALI_DVFS_STEPS]={
+		/*step 0*/{1},
+		/*step 1*/{1},
+		/*step 2*/{1} };
+
+/*
+  dvfs threshold
+*/
+
+mali_dvfs_threshold_table mali_dvfs_threshold[MALI_DVFS_STEPS]={
+		/*step 0*/{((int)((255*0)/100))   ,((int)((255*85)/100))},
+		/*step 1*/{((int)((255*25)/100))  ,((int)((255*85)/100))},
+		/*step 2*/{((int)((255*25)/100))  ,((int)((255*100)/100))}
+};
 
 mali_dvfs_table mali_dvfs[MALI_DVFS_STEPS]={
-#ifdef CONFIG_CPU_S5PV310_EVT1
 #ifdef CONFIG_S5PV310_ASV
-                   /*step 0*/{160  ,1000000    ,1000000},
-                   /*step 1*/{267  ,1000000    ,1100000} };
+			/*step 0*/{66  ,1000000    ,950000},
+			/*step 1*/{160  ,1000000    ,1000000},
+			/*step 2*/{267  ,1000000    ,1100000}
+};
 #else
-		   /*step 0*/{160  ,1000000    , 950000},
-                   /*step 1*/{267  ,1000000    ,1050000} };
-
+			/*step 0*/{66  ,1000000    , 950000},
+			/*step 1*/{160  ,1000000    ,1000000},
+			/*step 2*/{267  ,1000000    ,1100000}
+};
 #endif
-#else
-                   /*step 0*/{134  ,1000000    ,1050000},
-                   /*step 1*/{267  ,1000000    ,1150000} };
+
+#ifdef CONFIG_S5PV310_ASV
+#define ASV_8_LEVEL	8
+#define ASV_5_LEVEL	5
+
+static unsigned int asv_3d_volt_5_table[ASV_5_LEVEL][MALI_DVFS_STEPS] = {
+	/* L3(160MHz), L2(267MHz), L1(300MHz) */
+	{1000000, 1100000, 1150000},	/* S */
+	{1000000, 1100000, 1150000},	/* A */
+	{ 950000, 1000000, 1100000},	/* B */
+	{ 950000, 1000000, 1050000},	/* C */
+	{ 950000,  950000, 1000000},	/* D */
+};
+
+static unsigned int asv_3d_volt_8_table[ASV_8_LEVEL][MALI_DVFS_STEPS] = {
+	/* L3(160MHz), L2(267MHz)), L1(300MHz) */
+	{1000000, 1100000, 1150000},	/* SS */
+	{1000000, 1100000, 1150000},	/* A1 */
+	{1000000, 1100000, 1150000},	/* A2 */
+	{ 950000, 1000000, 1100000},	/* B1 */
+	{ 950000, 1000000, 1100000},	/* B2 */
+	{ 950000, 1000000, 1050000},	/* C1 */
+	{ 950000, 1000000, 1050000},	/* C2 */
+	{ 950000,  950000, 1000000},	/* D1 */
+};
 #endif
 
 static u32 mali_dvfs_utilization = 255;
@@ -141,21 +165,12 @@ static unsigned int get_mali_dvfs_staus(void)
         {
             if(mali_dvfs[stepIndex].vol ==voltage)
             {
-#ifdef CONFIG_GPU_CLOCK_CONTROL
-                if(gpu_clock_control[stepIndex] == clk_rate/mali_dvfs[stepIndex].freq)
-                {
-                    maliDvfsStatus.currentStep=stepIndex;
-                    maliDvfsStatus.pCurrentDvfs=&mali_dvfs[stepIndex];
-                    return maliDvfsStatus.currentStep;
-                }
-#else
                 if(mali_dvfs[stepIndex].clock == clk_rate/mali_dvfs[stepIndex].freq)
                 {
                     maliDvfsStatus.currentStep=stepIndex;
                     maliDvfsStatus.pCurrentDvfs=&mali_dvfs[stepIndex];
                     return maliDvfsStatus.currentStep;
                 }
-#endif
             }
         }
     }
@@ -164,18 +179,11 @@ static unsigned int get_mali_dvfs_staus(void)
     /*error handling for current status -> set default step*/
 #ifdef CONFIG_REGULATOR
     /*change the voltage*/
-#ifdef CONFIG_GPU_CLOCK_CONTROL
-    mali_regulator_set_voltage(gpu_voltage_control[MALI_DVFS_DEFAULT_STEP], gpu_voltage_control[MALI_DVFS_DEFAULT_STEP]);
-#else
     mali_regulator_set_voltage(mali_dvfs[MALI_DVFS_DEFAULT_STEP].vol, mali_dvfs[MALI_DVFS_DEFAULT_STEP].vol);
 #endif
-#endif
     /*change the clock*/
-#ifdef CONFIG_GPU_CLOCK_CONTROL
-    mali_clk_set_rate(gpu_clock_control[MALI_DVFS_DEFAULT_STEP], mali_dvfs[MALI_DVFS_DEFAULT_STEP].freq);
-#else
     mali_clk_set_rate(mali_dvfs[MALI_DVFS_DEFAULT_STEP].clock, mali_dvfs[MALI_DVFS_DEFAULT_STEP].freq);
-#endif
+
 	mali_clk_put();
 	//clk_put(mali_parent_clock);
 	//clk_put(mpll_clock);
@@ -230,34 +238,18 @@ static mali_bool set_mali_dvfs_staus(u32 step,mali_bool boostup)
     {
 #ifdef CONFIG_REGULATOR
         /*change the voltage*/
-#ifdef CONFIG_GPU_CLOCK_CONTROL
-    	mali_regulator_set_voltage(gpu_voltage_control[step], gpu_voltage_control[step]);
-#else
         mali_regulator_set_voltage(mali_dvfs[step].vol, mali_dvfs[step].vol);
 #endif
-#endif
         /*change the clock*/
-#ifdef CONFIG_GPU_CLOCK_CONTROL
-        mali_clk_set_rate(gpu_clock_control[step], mali_dvfs[step].freq);
-#else
         mali_clk_set_rate(mali_dvfs[step].clock, mali_dvfs[step].freq);
-#endif
     }
     else
     {
         /*change the clock*/
-#ifdef CONFIG_GPU_CLOCK_CONTROL
-        mali_clk_set_rate(gpu_clock_control[step], mali_dvfs[step].freq);
-#else
         mali_clk_set_rate(mali_dvfs[step].clock, mali_dvfs[step].freq);
-#endif
 #ifdef CONFIG_REGULATOR
         /*change the voltage*/
-#ifdef CONFIG_GPU_CLOCK_CONTROL
-    	mali_regulator_set_voltage(gpu_voltage_control[step], gpu_voltage_control[step]);
-#else
         mali_regulator_set_voltage(mali_dvfs[step].vol, mali_dvfs[step].vol);
-#endif
 #endif
     }
 
@@ -277,11 +269,8 @@ static mali_bool set_mali_dvfs_staus(u32 step,mali_bool boostup)
 
         clk_rate = mali_clk_get_rate();
         voltage = regulator_get_voltage(g3d_regulator);
-#ifdef CONFIG_GPU_CLOCK_CONTROL
-	if((mali_dvfs[step].vol== voltage)||(gpu_clock_control[step]== clk_rate/mali_dvfs[step].freq))
-#else
+
         if((mali_dvfs[step].vol== voltage)||(mali_dvfs[step].clock== clk_rate/mali_dvfs[step].freq))
-#endif
         {
             maliDvfsStatus.currentStep = validatedStep;
             /*for future use*/
@@ -295,18 +284,11 @@ static mali_bool set_mali_dvfs_staus(u32 step,mali_bool boostup)
     /*error handling for current status -> set default step*/
 #ifdef CONFIG_REGULATOR
     /*change the voltage*/
-#ifdef CONFIG_GPU_CLOCK_CONTROL
-	mali_regulator_set_voltage(gpu_voltage_control[MALI_DVFS_DEFAULT_STEP], gpu_voltage_control[MALI_DVFS_DEFAULT_STEP]);
-#else
     mali_regulator_set_voltage(mali_dvfs[MALI_DVFS_DEFAULT_STEP].vol, mali_dvfs[MALI_DVFS_DEFAULT_STEP].vol);
 #endif
-#endif
     /*change the clock*/
-#ifdef CONFIG_GPU_CLOCK_CONTROL
-    mali_clk_set_rate(gpu_clock_control[MALI_DVFS_DEFAULT_STEP], mali_dvfs[MALI_DVFS_DEFAULT_STEP].freq);
-#else
     mali_clk_set_rate(mali_dvfs[MALI_DVFS_DEFAULT_STEP].clock, mali_dvfs[MALI_DVFS_DEFAULT_STEP].freq);
-#endif
+
     mali_clk_put();
     //clk_put(mali_parent_clock);
     //clk_put(mpll_clock);
@@ -377,22 +359,43 @@ static unsigned int decideNextStatus(unsigned int utilization)
     unsigned int level=0; // 0:stay, 1:up
 	if(!mali_dvfs_control)
 	{
-	    if( utilization>GPU_DVFS_UP_THRESHOLD && maliDvfsStatus.currentStep==0 )
-	        level=1;
-	    else if( utilization<GPU_DVFS_DOWN_THRESHOLD && maliDvfsStatus.currentStep==1 )
-	        level=0;
-	    else
-	        level = maliDvfsStatus.currentStep;
+		switch(maliDvfsStatus.currentStep)
+		{
+			case 0:
+				if( utilization > mali_dvfs_threshold[maliDvfsStatus.currentStep].upthreshold)
+					level=1;
+				else
+					level = maliDvfsStatus.currentStep;
+				break;
+			case 1:
+				if( utilization > mali_dvfs_threshold[maliDvfsStatus.currentStep].upthreshold)
+					level=2;
+				else if( utilization < mali_dvfs_threshold[maliDvfsStatus.currentStep].downthreshold)
+					level=0;
+				else
+					level = maliDvfsStatus.currentStep;
+				break;
+			case 2:
+				if( utilization < mali_dvfs_threshold[maliDvfsStatus.currentStep].downthreshold)
+					level=1;
+				else
+					level = maliDvfsStatus.currentStep;
+				break;
+		}
 	}
 	else
 	{
-		if((1 == mali_dvfs_control)||(( mali_dvfs_control > 2) && (mali_dvfs_control < 161)))
+		if((mali_dvfs_control == 1)||(( mali_dvfs_control > 3) && (mali_dvfs_control < mali_dvfs[0].clock+1)))
 		{
 			level=0;
 		}
-		else
+		else if((mali_dvfs_control == 2)||(( mali_dvfs_control > mali_dvfs[0].clock) && (mali_dvfs_control < mali_dvfs[1].clock+1)))
 		{
 			level=1;
+		}
+		else
+		{
+			level=2;
 		}
 	}
     return level;
@@ -402,62 +405,15 @@ static unsigned int decideNextStatus(unsigned int utilization)
 
 extern struct s5pv310_asv_info asv_info;
 
-static mali_bool mali_dvfs_table_update()
+static mali_bool mali_dvfs_table_update(void)
 {
+	unsigned int i;
 
-#ifdef CONFIG_S5PV310_HI_ARMCLK_THAN_1_2GHZ
-	MALI_DEBUG_PRINT(3, ("> max arm clock is higher than 1.2GHz.\n"));
-	switch(asv_info.asv_num) {
-	/* ASB table for 1.4GHz */
-	case 0:
-	case 1:
-		/* SS & A group */
-		mali_dvfs[MALI_DVFS_L2].vol = 1100000; // 266Mhz
-		mali_dvfs[MALI_DVFS_L3].vol = 1000000; // 160Mhz
-		break;
-	case 2:
-	case 3:
-		/* B & C group */
-		mali_dvfs[MALI_DVFS_L2].vol = 1000000; // 266Mhz
-		mali_dvfs[MALI_DVFS_L3].vol =  950000; // 160Mhz
-		break;
-	case 4:
-		/* D group */
-		mali_dvfs[MALI_DVFS_L2].vol =  950000; // 266Mhz
-		mali_dvfs[MALI_DVFS_L3].vol =  950000; // 160Mhz
-		break;
-	default :
-		MALI_PRINT(("mali asv level is invalid %d", asv_info.asv_num));
-		return MALI_FALSE;
-	}
-#else
-	switch(asv_info.asv_num) {
-	case 0:
-	case 1:
-	case 2:
-		mali_dvfs[MALI_DVFS_L3].vol = 1000000; // 160Mhz
-		mali_dvfs[MALI_DVFS_L2].vol = 1100000; // 266Mhz
-		break;
-	case 3:
-	case 4:
-		mali_dvfs[MALI_DVFS_L3].vol = 950000; // 160Mhz
-		mali_dvfs[MALI_DVFS_L2].vol = 1000000; // 266Mhz
-		break;
-	case 5:
-	case 6:
-		mali_dvfs[MALI_DVFS_L3].vol = 950000; // 160Mhz
-		mali_dvfs[MALI_DVFS_L2].vol = 1000000; // 266Mhz
-		break;
-	case 7:
-	case 8:
-		mali_dvfs[MALI_DVFS_L3].vol = 950000; // 160Mhz
-		mali_dvfs[MALI_DVFS_L2].vol = 950000; // 266Mhz
-		break;
-	default :
-		MALI_PRINT(("mali asv level is invalid %d", asv_info.asv_num));
-		return MALI_FALSE;
-	}
-#endif
+		for (i = 0; i < MALI_DVFS_STEPS; i++) {
+			mali_dvfs[i].vol = asv_3d_volt_8_table[asv_info.asv_num][i];
+			printk(KERN_INFO "mali_dvfs[%d].vol = %d\n",
+				i, mali_dvfs[i].vol);
+		}
 
 	return MALI_TRUE;
 
@@ -511,7 +467,7 @@ static mali_bool mali_dvfs_staus(u32 utilization)
 			MALI_DEBUG_PRINT(1, ("error on change_mali_dvfs_staus \n"));
 			return MALI_FALSE;
 		}
-		stay_count = MALI_DVFS_STAY_AFTER_CHANGE;
+		stay_count = mali_dvfs_staycount[maliDvfsStatus.currentStep].staycount;
 	}
 	else
 	{
@@ -578,4 +534,12 @@ mali_bool mali_dvfs_handler(u32 utilization)
 
     /*add error handle here*/
     return MALI_TRUE;
+}
+
+void mali_default_step_set(int step, mali_bool boostup)
+{
+    mali_clk_set_rate(mali_dvfs[step].clock, mali_dvfs[step].freq);
+
+    if (maliDvfsStatus.currentStep == 1)
+	set_mali_dvfs_staus(step, boostup);
 }

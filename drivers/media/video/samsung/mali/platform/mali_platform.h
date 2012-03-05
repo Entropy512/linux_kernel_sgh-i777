@@ -86,10 +86,10 @@ int mali_regulator_get_usecount(void);
 void mali_regulator_disable(void);
 void mali_regulator_enable(void);
 void mali_regulator_set_voltage(int min_uV, int max_uV);
+#endif
 void mali_clk_set_rate(unsigned int clk, unsigned int mhz);
 unsigned long mali_clk_get_rate(void);
 void mali_clk_put(void);
-#endif
 
 #if USING_MALI_PMM
 #if MALI_POWER_MGMT_TEST_SUITE
@@ -110,3 +110,4 @@ mali_bool mali_dvfs_handler(u32 utilization);
 int mali_dvfs_is_running(void);
 void mali_dvfs_late_resume(void);
 #endif
+void mali_default_step_set(int step, mali_bool boostup);
