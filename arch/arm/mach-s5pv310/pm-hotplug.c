@@ -38,9 +38,13 @@
 
 #define CPUMON 0
 
-#define CHECK_DELAY	(.5*HZ)
+#define CHECK_DELAY	HZ >> 1
 #define TRANS_LOAD_L	20
-#define TRANS_LOAD_H	(TRANS_LOAD_L*3)
+#define TRANS_LOAD_H    80
+#define TRANS_LOAD_L_SCREEN_OFF 80
+#define TRANS_LOAD_H_SCREEN_OFF 1000 //just to make sure that cpu1 is off to help didle
+
+#define CPU1_ON_FREQ    800000
 
 #define HOTPLUG_UNLOCKED 0
 #define HOTPLUG_LOCKED 1
@@ -50,13 +54,24 @@ static struct workqueue_struct *hotplug_wq;
 static struct delayed_work hotplug_work;
 
 static unsigned int hotpluging_rate = CHECK_DELAY;
-module_param_named(rate, hotpluging_rate, uint, 0644);
+static unsigned int check_rate = CHECK_DELAY;
+module_param_named(rate, check_rate, uint, 0644);
+static unsigned int check_rate_cpuon = CHECK_DELAY << 1;
+module_param_named(rate_cpuon, check_rate_cpuon, uint, 0644);
+static unsigned int check_rate_scroff = CHECK_DELAY << 2;
+module_param_named(rate_scroff, check_rate_scroff, uint, 0644);
+static unsigned int freq_cpu1on = CPU1_ON_FREQ;
+module_param_named(freq_cpu1on, freq_cpu1on, uint, 0644);
 static unsigned int user_lock;
 module_param_named(lock, user_lock, uint, 0644);
 static unsigned int trans_load_l = TRANS_LOAD_L;
 module_param_named(loadl, trans_load_l, uint, 0644);
 static unsigned int trans_load_h = TRANS_LOAD_H;
 module_param_named(loadh, trans_load_h, uint, 0644);
+static unsigned int trans_load_l_off = TRANS_LOAD_L_SCREEN_OFF;
+module_param_named(loadl_scroff, trans_load_l_off, uint, 0644);
+static unsigned int trans_load_h_off = TRANS_LOAD_H_SCREEN_OFF;
+module_param_named(loadh_scroff, trans_load_h_off, uint, 0644);
 
 struct cpu_time_info {
 	cputime64_t prev_cpu_idle;
@@ -79,10 +94,6 @@ static void hotplug_timer(struct work_struct *work)
 
 	mutex_lock(&hotplug_lock);
 
-	if (screen_off && !cpu_online(1)) {
-	        printk(KERN_INFO "pm-hotplug: disable cpu auto-hotplug\n");
-	        goto out;
-	}
 	if (user_lock == 1)
 		goto no_hotplug;
 
@@ -115,30 +126,36 @@ static void hotplug_timer(struct work_struct *work)
 
 	cur_freq = cpufreq_get(0);
 
-	if (((avg_load < trans_load_l) || (cur_freq <= 200 * 1000)) &&
-	    (cpu_online(1) == 1)) {
+	if ( ( (avg_load < (screen_off ? trans_load_l_off : trans_load_l)) ||
+			(cur_freq < freq_cpu1on )
+			)
+		&& cpu_online(1) ) 
+	{
 		printk("cpu1 turning off!\n");
 		cpu_down(1);
 #if CPUMON
 		printk(KERN_ERR "CPUMON D %d\n", avg_load);
 #endif
 		printk("cpu1 off end!\n");
-		hotpluging_rate = CHECK_DELAY;
-	} else if (((avg_load > trans_load_h) && (cur_freq > 200 * 1000)) &&
-		   (cpu_online(1) == 0)) {
+		if(!screen_off) hotpluging_rate = check_rate;
+		else hotpluging_rate = check_rate_scroff;
+	} else if ( (   (avg_load > (screen_off ? trans_load_h_off : trans_load_h)) &&
+			(cur_freq >= freq_cpu1on )
+			) 
+		&& !cpu_online(1) ) 
+	{
 		printk("cpu1 turning on!\n");
 		cpu_up(1);
 #if CPUMON
 		printk(KERN_ERR "CPUMON U %d\n", avg_load);
 #endif
 		printk("cpu1 on end!\n");
-		hotpluging_rate = CHECK_DELAY * 4;
+		hotpluging_rate = check_rate_cpuon;
 	}
  no_hotplug:
 
 	queue_delayed_work_on(0, hotplug_wq, &hotplug_work, hotpluging_rate);
 
- out:
 	mutex_unlock(&hotplug_lock);
 }
 
@@ -172,6 +189,32 @@ static struct notifier_block s5pv310_pm_hotplug_notifier = {
 	.notifier_call = s5pv310_pm_hotplug_notifier_event,
 };
 
+static void hotplug_early_suspend(struct early_suspend *handler)
+{
+	mutex_lock(&hotplug_lock);
+	screen_off = true;
+	hotpluging_rate = check_rate_scroff;
+	mutex_unlock(&hotplug_lock);
+}
+
+static void hotplug_late_resume(struct early_suspend *handler)
+{
+	printk(KERN_INFO "pm-hotplug: enable cpu auto-hotplug\n");
+
+	mutex_lock(&hotplug_lock);
+	screen_off = false;
+	hotpluging_rate = check_rate;
+	//cpu_up(1); //when the screen is on, activate the second cpu no matter what the load is
+	queue_delayed_work_on(0, hotplug_wq, &hotplug_work, hotpluging_rate);
+	mutex_unlock(&hotplug_lock);
+}
+
+static struct early_suspend hotplug_early_suspend_notifier = {
+	.suspend = hotplug_early_suspend,
+	.resume = hotplug_late_resume,
+	.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN,
+};
+
 static int hotplug_reboot_notifier_call(struct notifier_block *this,
 					unsigned long code, void *_cmd)
 {
@@ -185,29 +228,6 @@ static int hotplug_reboot_notifier_call(struct notifier_block *this,
 
 static struct notifier_block hotplug_reboot_notifier = {
 	.notifier_call = hotplug_reboot_notifier_call,
-};
-
-static void hotplug_early_suspend(struct early_suspend *handler)
-{
-        mutex_lock(&hotplug_lock);
-        screen_off = true;
-        mutex_unlock(&hotplug_lock);
-}
-
-static void hotplug_late_resume(struct early_suspend *handler)
-{
-        printk(KERN_INFO "pm-hotplug: enable cpu auto-hotplug\n");
-
-        mutex_lock(&hotplug_lock);
-        screen_off = false;
-        queue_delayed_work_on(0, hotplug_wq, &hotplug_work, hotpluging_rate);
-        mutex_unlock(&hotplug_lock);
-}
-
-static struct early_suspend hotplug_early_suspend_notifier = {
-        .suspend = hotplug_early_suspend,
-        .resume = hotplug_late_resume,
-        .level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN,
 };
 
 static int __init s5pv310_pm_hotplug_init(void)
