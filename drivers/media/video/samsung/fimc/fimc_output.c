@@ -2489,15 +2489,6 @@ static int fimc_qbuf_output_dma_auto(struct fimc_control *ctrl,
 		memcpy(&fimd_rect_virtual, &fimd_rect, sizeof(fimd_rect));
 		fimc_outdev_dma_auto_dst_resize(&fimd_rect_virtual);
 
-		if (ctrl->fb.is_enable == 1) {
-			ret = s3cfb_direct_ioctl(ctrl->id, S3CFB_SET_WIN_OFF,
-					(unsigned long)NULL);
-			if (ret < 0) {
-				fimc_err("direct_ioctl(S3CFB_SET_WIN_OFF) fail\n");
-				return -EINVAL;
-			}
-		}
-
 		/* Get WIN var_screeninfo */
 		ret = s3cfb_direct_ioctl(id, FBIOGET_VSCREENINFO,
 						(unsigned long)&var);
@@ -2544,12 +2535,6 @@ static int fimc_qbuf_output_dma_auto(struct fimc_control *ctrl,
 			return -EINVAL;
 		}
 
-		ret = s3cfb_direct_ioctl(ctrl->id, S3CFB_SET_WIN_ON,
-				(unsigned long)NULL);
-		if (ret < 0) {
-			fimc_err("direct_ioctl(S3CFB_SET_WIN_ON) fail\n");
-			return -EINVAL;
-		}
 		/* fall through */
 
 	case FIMC_STREAMON_IDLE:
@@ -2773,18 +2758,13 @@ int fimc_qbuf_output(void *fh, struct v4l2_buffer *b)
 		ret = fimc_pop_inq(ctrl, &ctx_num, &idx);
 		if (ret < 0) {
 			fimc_err("Fail: fimc_pop_inq\n");
-#if (defined(CONFIG_S5PV310_DEV_PD) && defined(CONFIG_PM_RUNTIME))
-			pm_runtime_put_sync(ctrl->dev);
-#endif
 			return -EINVAL;
 		}
 
 		ctx = &ctrl->out->ctx[ctx_num];
 		if (ctx_num != ctrl->out->last_ctx) {
 			ctrl->out->last_ctx = ctx->ctx_num;
-			ret = fimc_outdev_set_ctx_param(ctrl, ctx);
-			if (ret < 0)
-				return ret;
+			fimc_outdev_set_ctx_param(ctrl, ctx);
 		}
 
 		switch (ctx->overlay.mode) {
