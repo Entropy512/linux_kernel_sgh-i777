@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.35.7
-# Mon Aug  8 18:04:56 2011
+# Tue Jun 14 18:00:06 2011
 #
 CONFIG_ARM=y
 CONFIG_HAVE_PWM=y
@@ -341,7 +341,6 @@ CONFIG_S5P_SYSMMU=y
 CONFIG_S3C64XX_DMA=y
 CONFIG_CPU_S5PV310=y
 CONFIG_CPU_S5PV310_EVT1=y
-# CONFIG_S5PV310_HI_ARMCLK_THAN_1_2GHZ is not set
 CONFIG_USE_EXT_GIC=y
 CONFIG_S5PV310_DEV_PD=y
 CONFIG_S5PV310_SETUP_I2C1=y
@@ -440,11 +439,6 @@ CONFIG_S5PV310_BUSFREQ=y
 # CPUFreq step up sequence selection: 2 step or 3 step
 #
 CONFIG_FREQ_STEP_UP_L2_L0=y
-
-#
-# GPS
-#
-# CONFIG_GPS_GLONASS is not set
 
 #
 # Processor Type
