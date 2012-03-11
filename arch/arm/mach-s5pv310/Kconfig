@@ -22,14 +22,6 @@ config CPU_S5PV310_EVT1
 	help
 	  Enable S5PV310 EVT1 CPU support
 
-config S5PV310_HI_ARMCLK_THAN_1_2GHZ
-	bool "Enable the higher ARM clock than 1.2GHz"
-	default n
-	help
-	  S5PV310 has different max arm clock. (i.e. 1.0GHz, 1.2GHz and 1.4GHz etc.)
-	  If you are using the chip to work at the high clock than 1.2GHz,
-	  activate this option.
-
 config USE_EXT_GIC
 	bool "Use external GIC and interrupt combiner"
 	depends on CPU_S5PV310_EVT1
@@ -552,12 +544,5 @@ config FREQ_STEP_UP_L2_L0
 	 In case of 3-step up raises to L2, L1, and L0 level in order.
 	 ("Frequecy 3-step up: Other->L2->L1->L0 for CPU Freq")
 endmenu
-
-comment "GPS"
-menuconfig GPS_GLONASS
-	bool "GPS GLONASS"
-	default n
-	help
-	 This option makes to select GPS GLONASS
 
 endif

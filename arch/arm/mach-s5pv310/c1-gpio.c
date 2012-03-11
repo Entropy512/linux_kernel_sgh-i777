@@ -80,6 +80,18 @@ static struct gpio_init_data c1_init_gpios[] = {
 	},
 #endif
 	{
+		.num	= S5PV310_GPB(6),
+		.cfg	= S3C_GPIO_OUTPUT,
+		.val	= S3C_GPIO_SETPIN_ZERO,
+		.pud	= S3C_GPIO_PULL_NONE,
+		.drv	= S5P_GPIO_DRVSTR_LV2,
+	}, {
+		.num	= S5PV310_GPB(7),
+		.cfg	= S3C_GPIO_OUTPUT,
+		.val	= S3C_GPIO_SETPIN_ZERO,
+		.pud	= S3C_GPIO_PULL_NONE,
+		.drv	= S5P_GPIO_DRVSTR_LV2,
+	}, {
 		.num	= S5PV310_GPC1(3),	/* CODEC_SDA_1.8V */
 		.cfg	= S3C_GPIO_INPUT,
 		.val	= S3C_GPIO_SETPIN_NONE,

@@ -2102,15 +2102,9 @@ static struct regulator_consumer_supply ldo8_supply[] = {
 	REGULATOR_SUPPLY("vusb_3.3v", NULL),
 };
 
-#if defined(CONFIG_S5PV310_HI_ARMCLK_THAN_1_2GHZ)
-static struct regulator_consumer_supply ldo10_supply[] = {
-	REGULATOR_SUPPLY("vpll_1.2v", NULL),
-};
-#else
 static struct regulator_consumer_supply ldo10_supply[] = {
 	REGULATOR_SUPPLY("vpll_1.1v", NULL),
 };
-#endif
 
 static struct regulator_consumer_supply ldo11_supply[] = {
 	REGULATOR_SUPPLY("touch", NULL),
@@ -2230,13 +2224,8 @@ REGULATOR_INIT(ldo7, "CAM_ISP_1.8V", 1800000, 1800000, 0,
 		REGULATOR_CHANGE_STATUS, 1);
 REGULATOR_INIT(ldo8, "VUSB_3.3V", 3300000, 3300000, 1,
 		REGULATOR_CHANGE_STATUS, 1);
-#if defined(CONFIG_S5PV310_HI_ARMCLK_THAN_1_2GHZ)
-REGULATOR_INIT(ldo10, "VPLL_1.2V", 1200000, 1200000, 1,
-		REGULATOR_CHANGE_STATUS, 1);
-#else
 REGULATOR_INIT(ldo10, "VPLL_1.1V", 1100000, 1100000, 1,
 		REGULATOR_CHANGE_STATUS, 1);
-#endif
 #if defined(CONFIG_TARGET_LOCALE_NAATT)
 REGULATOR_INIT(ldo11, "TOUCH_2.8V", 3100000, 3100000, 0,
 		REGULATOR_CHANGE_STATUS, 1);
@@ -3129,16 +3118,16 @@ static u8 t7_config_e[] = {GEN_POWERCONFIG_T7,
 				255,	/* ACTVACQINT */
 				25		/* ACTV2IDLETO: 25 * 200ms = 5s */};
 static u8 t8_config_e[] = {GEN_ACQUISITIONCONFIG_T8,
-				22, 0, 5, 1, 0, 0, 4, 35, 40, 55};
+				27, 0, 5, 1, 0, 0, 8, 8, 0, 0};
 #if 1 /* MXT224E_0V5_CONFIG */
 /* NEXTTCHDI added */
 static u8 t9_config_e[] = {TOUCH_MULTITOUCHSCREEN_T9,
-				131, 0, 0, 19, 11, 0, 32, 50, 2, 1,
+				131, 0, 0, 19, 11, 0, 16, 35, 2, 1,
 				10,
 				15,		/* MOVHYSTI */
 				1, 11, MXT224_MAX_MT_FINGERS, 5, 40, 10, 31, 3,
 				223, 1, 10, 10, 10, 10, 143, 40, 143, 80,
-				18, 15, 50, 50, 0};
+				18, 15, 50, 50, 2};
 #else
 static u8 t9_config_e[] = {TOUCH_MULTITOUCHSCREEN_T9,
 				139, 0, 0, 19, 11, 0, 16, MXT224_THRESHOLD, 2, 1, 10, 3, 1,
@@ -3165,52 +3154,32 @@ static u8 t42_config_e[] = {PROCI_TOUCHSUPPRESSION_T42,
 				0, 0, 0, 0, 0, 0, 0, 0};
 
 static u8 t46_config_e[] = {SPT_CTECONFIG_T46,
-				0, 3, 16, 40, 0, 0, 1, 0, 0};
+				0, 3, 16, 48, 0, 0, 1, 0, 0};
 
 static u8 t47_config_e[] = {PROCI_STYLUS_T47,
 				0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 #if 1 /*MXT224E_0V5_CONFIG */
 #ifdef CONFIG_TARGET_LOCALE_NA
-static u8 t48_config_e_ta[] = {PROCG_NOISESUPPRESSION_T48,
-				3, 132, 0x50, 0, 0, 0, 0, 0, 10, 15,
-				0, 0, 0, 6, 6, 0, 0, 100, 4, 64,
-				10, 0, 20, 5, 0, 38, 0, 20, 0, 0,
-				0, 0, 0, 0, 0, 40, 2,
-				10,		/* MOVHYSTI */
-				1, 15,
-				10, 5, 40, 240, 245, 10, 10, 148, 50, 143,
-				80, 18, 10, 0};
 static u8 t48_config_e[] = {PROCG_NOISESUPPRESSION_T48,
-				3, 132, 0x40, 0, 0, 0, 0, 0, 10, 15,
-				0, 0, 0, 6, 6, 0, 0, 100, 4, 64,
-				10, 0, 20, 5, 0, 38, 0, 5, 0, 0,  
-				0, 0, 0, 0, 32, 50, 2,
-				10,
-				1, 46,
-				MXT224_MAX_MT_FINGERS, 5, 40, 10, 0, 10, 10, 143, 40, 143,
-				80, 18, 15, 0};
+                                1, 12, 80, 0, 0, 0, 0, 0, 0, 0,
+                                0, 0, 0, 6, 6, 0, 0, 100, 4, 64,
+                                10, 0, 20, 5, 0, 38, 0, 20, 0, 0,
+                                0, 0, 0, 0, 0, 40, 2,
+                                15,             /* MOVHYSTI */
+                                1, 15,
+                                10, 5, 40, 0, 0, 0, 0, 143, 40, 143,
+                                80, 18, 15, 2};
 #else
-static u8 t48_config_e_ta[] = {PROCG_NOISESUPPRESSION_T48,
-				3, 132, 0x52, 0, 0, 0, 0, 0, 10, 15,
-				0, 0, 0, 6, 6, 0, 0, 64, 4, 64,
+static u8 t48_config_e[] = {PROCG_NOISESUPPRESSION_T48,
+				1, 12, 80, 0, 0, 0, 0, 0, 0, 0,
+				0, 0, 0, 6, 6, 0, 0, 100, 4, 64,
 				10, 0, 20, 5, 0, 38, 0, 20, 0, 0,
 				0, 0, 0, 0, 0, 40, 2,
 				15,		/* MOVHYSTI */
-				1, 46,
-				10, 5, 40, 235, 235, 10, 10, 160, 50, 143,
-				80, 18, 10, 0};
-
-static u8 t48_config_e[] = {PROCG_NOISESUPPRESSION_T48,
-				3, 132, 0x40, 0, 0, 0, 0, 0, 10, 15,
-				0, 0, 0, 6, 6, 0, 0, 64, 4, 64,
-				10, 0, 20, 5, 0, 38, 0, 5, 0, 0,  
-				0, 0, 0, 0, 32, 50, 2,
-				15,
-				1, 11,
-				MXT224_MAX_MT_FINGERS, 5, 40, 10, 10, 10, 10, 143, 40, 143,
-				80, 18, 15, 0};
-
+				1, 15,
+				10, 5, 40, 0, 0, 0, 0, 143, 40, 143,
+				80, 18, 15, 2};
 #endif
 #else
 /*static u8 t48_config_e[] = {PROCG_NOISESUPPRESSION_T48,
@@ -3248,7 +3217,6 @@ static struct mxt224_platform_data mxt224_data = {
 #else
 	.config = mxt224_config,
 	.config_e = mxt224e_config,
-	.t48_ta_cfg = t48_config_e_ta,
 #endif
 	.min_x = 0,
 #ifdef CONFIG_TOUCHSCREEN_MXT768E

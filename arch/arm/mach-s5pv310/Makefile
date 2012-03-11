@@ -26,14 +26,7 @@ obj-$(CONFIG_S5PV310_PM)	+= pm.o sleep.o
 
 obj-$(CONFIG_SMP)		+= platsmp.o headsmp.o
 obj-$(CONFIG_HOTPLUG_CPU)	+= hotplug.o
-
-# Support higher armclock than 1.2GHz in DVFS according to chip
-ifeq ($(CONFIG_S5PV310_HI_ARMCLK_THAN_1_2GHZ),y)
-obj-$(CONFIG_CPU_FREQ)		+= cpufreq_high.o cpu_ppmu.o
-else
 obj-$(CONFIG_CPU_FREQ)		+= cpufreq.o cpu_ppmu.o
-endif
-
 obj-$(CONFIG_CPU_IDLE)		+= cpuidle.o
 obj-$(CONFIG_S5P_MEM_BOOTMEM)	+= bootmem-smdkv310.o
 obj-$(CONFIG_S5PV310_PM_HOTPLUG)	+= pm-hotplug.o
