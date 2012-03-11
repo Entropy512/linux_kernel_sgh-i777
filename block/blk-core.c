@@ -33,10 +33,6 @@
 
 #include "blk.h"
 
-#ifdef CONFIG_MACH_C1_NA_SPR_REV05
-#include <linux/delay.h>
-#endif
-
 EXPORT_TRACEPOINT_SYMBOL_GPL(block_remap);
 EXPORT_TRACEPOINT_SYMBOL_GPL(block_rq_remap);
 EXPORT_TRACEPOINT_SYMBOL_GPL(block_bio_complete);
@@ -1604,23 +1600,6 @@ void submit_bio(int rw, struct bio *bio)
 				bdevname(bio->bi_bdev, b),
 				count);
 		}
-#ifdef CONFIG_MACH_C1_NA_SPR_REV05
-		if ( bio->bi_bdev->bd_disk->major == MMC_BLOCK_MAJOR &&
-				bio->bi_bdev->bd_part->partno == 0 &&
-				rw & WRITE &&
-				(unsigned long long)bio->bi_sector < 35) {
-			char b[BDEVNAME_SIZE];
-			printk(KERN_ERR "%s(%d): %s block %Lu on %s (%u sectors)\n",
-			current->comm, task_pid_nr(current),
-				(rw & WRITE) ? "WRITE" : "READ",
-				(unsigned long long)bio->bi_sector,
-				bdevname(bio->bi_bdev, b),
-				count);
-
-			msleep(100);
-			panic("You access wrong sector.\n");
-		}
-#endif
 	}
 
 	generic_make_request(bio);
