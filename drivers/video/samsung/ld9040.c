@@ -187,66 +187,40 @@ static int ld9040_set_elvss(struct ld9040 *lcd)
 	struct ld9040_panel_data *pdata = lcd->lcd_pd->pdata;
 
 	if (get_lcdtype == LCDTYPE_M2) {  /* for M2 */
-		if (lcd->acl_enable) {			
-				switch (lcd->bl) {
-				case 0 ... 14: /* 30cd ~ 200cd */
-					ret = ld9040_panel_send_sequence(lcd, pdata->elvss_table[0]);
-					break;
-				case 15 ... 24: /* 210cd ~ 300cd */
-					ret = ld9040_panel_send_sequence(lcd, pdata->elvss_table[1]);
-					break;
-				default:
-					break;
-				}
-		} else {
-				switch (lcd->bl) {
-				case 0 ... 4: /* 30cd ~ 100cd */
-					ret = ld9040_panel_send_sequence(lcd, pdata->elvss_table[0]);
-					break;
-				case 5 ... 10: /* 110cd ~ 160cd */
-					ret = ld9040_panel_send_sequence(lcd, pdata->elvss_table[1]);
-					break;
-				case 11 ... 14: /* 170cd ~ 200cd */
-					ret = ld9040_panel_send_sequence(lcd, pdata->elvss_table[2]);
-					break;
-				case 15 ... 24: /* 210cd ~ 300cd */
-					ret = ld9040_panel_send_sequence(lcd, pdata->elvss_table[3]);
-					break;
-				default:
-					break;
-				}
+		switch (lcd->bl) {
+		case 0 ... 4: /* 30cd ~ 100cd */
+			ret = ld9040_panel_send_sequence(lcd, pdata->elvss_table[0]);
+			break;
+		case 5 ... 10: /* 110cd ~ 160cd */
+			ret = ld9040_panel_send_sequence(lcd, pdata->elvss_table[1]);
+			break;
+		case 11 ... 14: /* 170cd ~ 200cd */
+			ret = ld9040_panel_send_sequence(lcd, pdata->elvss_table[2]);
+			break;
+		case 15 ... 24: /* 210cd ~ 300cd */
+			ret = ld9040_panel_send_sequence(lcd, pdata->elvss_table[3]);
+			break;
+		default:
+			break;
 		}
 	} else {/* for SM2 (A1 line or A2 line) */
-	if (lcd->acl_enable) {
-				switch (lcd->bl) {
-				case 0 ... 14: /* 30cd ~ 200cd */
-					ret = ld9040_panel_send_sequence(lcd, pdata->elvss_sm2_table[0]);
-					break;
-				case 15 ... 24: /* 210cd ~ 300cd */
-					ret = ld9040_panel_send_sequence(lcd, pdata->elvss_sm2_table[1]);
-					break;
-				default:
-					break;
-				}
-	} else {
-				switch (lcd->bl) {
-				case 0 ... 4: /* 30cd ~ 100cd */
-					ret = ld9040_panel_send_sequence(lcd, pdata->elvss_sm2_table[0]);
-					break;
-				case 5 ... 10: /* 110cd ~ 160cd */
-					ret = ld9040_panel_send_sequence(lcd, pdata->elvss_sm2_table[1]);
-					break;
-				case 11 ... 14: /* 170cd ~ 200cd */
-					ret = ld9040_panel_send_sequence(lcd, pdata->elvss_sm2_table[2]);
-					break;
-				case 15 ... 24: /* 210cd ~ 300cd */
-					ret = ld9040_panel_send_sequence(lcd, pdata->elvss_sm2_table[3]);
-					break;
-				default:
-					break;
-				}
+		switch (lcd->bl) {
+		case 0 ... 4: /* 30cd ~ 100cd */
+			ret = ld9040_panel_send_sequence(lcd, pdata->elvss_sm2_table[0]);
+			break;
+		case 5 ... 10: /* 110cd ~ 160cd */
+			ret = ld9040_panel_send_sequence(lcd, pdata->elvss_sm2_table[1]);
+			break;
+		case 11 ... 14: /* 170cd ~ 200cd */
+			ret = ld9040_panel_send_sequence(lcd, pdata->elvss_sm2_table[2]);
+			break;
+		case 15 ... 24: /* 210cd ~ 300cd */
+			ret = ld9040_panel_send_sequence(lcd, pdata->elvss_sm2_table[3]);
+			break;
+		default:
+			break;
+		}
 	}
-}
 	dev_dbg(lcd->dev, "level  = %d\n", lcd->bl);
 
 	if (ret) {

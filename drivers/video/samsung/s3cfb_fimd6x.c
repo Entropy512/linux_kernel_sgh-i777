@@ -646,13 +646,6 @@ int s3cfb_set_window_control(struct s3cfb_global *ctrl, int id)
 	struct fb_var_screeninfo *var = &fb->var;
 	struct s3cfb_window *win = fb->par;
 	u32 cfg;
-	u32 shw;
-
-	if ((pdata->hw_ver == 0x62) || (pdata->hw_ver == 0x70)) {
-		shw = readl(ctrl->regs + S3C_WINSHMAP);
-		shw |= S3C_WINSHMAP_PROTECT(id);
-		writel(shw, ctrl->regs + S3C_WINSHMAP);
-	}
 
 	cfg = readl(ctrl->regs + S3C_WINCON(id));
 
@@ -741,12 +734,6 @@ int s3cfb_set_window_control(struct s3cfb_global *ctrl, int id)
 
 	writel(cfg, ctrl->regs + S3C_WINCON(id));
 
-	if ((pdata->hw_ver == 0x62) || (pdata->hw_ver == 0x70)) {
-		shw = readl(ctrl->regs + S3C_WINSHMAP);
-		shw &= ~(S3C_WINSHMAP_PROTECT(id));
-		writel(shw, ctrl->regs + S3C_WINSHMAP);
-	}
-
 	return 0;
 }
 
@@ -796,22 +783,14 @@ int s3cfb_set_alpha_value(struct s3cfb_global *ctrl, int value)
 
 int s3cfb_set_alpha_blending(struct s3cfb_global *ctrl, int id)
 {
-	struct s3c_platform_fb *pdata = to_fb_plat(ctrl->dev);
 	struct s3cfb_window *win = ctrl->fb[id]->par;
 	struct s3cfb_alpha *alpha = &win->alpha;
 	u32 avalue = 0, cfg;
-	u32 shw;
 
 	if (id == 0) {
 		dev_err(ctrl->dev, "[fb%d] does not support alpha blending\n",
 			id);
 		return -EINVAL;
-	}
-
-	if ((pdata->hw_ver == 0x62) || (pdata->hw_ver == 0x70)) {
-		shw = readl(ctrl->regs + S3C_WINSHMAP);
-		shw |= S3C_WINSHMAP_PROTECT(id);
-		writel(shw, ctrl->regs + S3C_WINSHMAP);
 	}
 
 	cfg = readl(ctrl->regs + S3C_WINCON(id));
@@ -839,12 +818,6 @@ int s3cfb_set_alpha_blending(struct s3cfb_global *ctrl, int id)
 
 	writel(cfg, ctrl->regs + S3C_WINCON(id));
 	writel(avalue, ctrl->regs + S3C_VIDOSD_C(id));
-
-	if ((pdata->hw_ver == 0x62) || (pdata->hw_ver == 0x70)) {
-		shw = readl(ctrl->regs + S3C_WINSHMAP);
-		shw &= ~(S3C_WINSHMAP_PROTECT(id));
-		writel(shw, ctrl->regs + S3C_WINSHMAP);
-	}
 
 	return 0;
 }
@@ -900,39 +873,23 @@ int s3cfb_set_window_size(struct s3cfb_global *ctrl, int id)
 
 int s3cfb_set_buffer_size(struct s3cfb_global *ctrl, int id)
 {
-	struct s3c_platform_fb *pdata = to_fb_plat(ctrl->dev);
 	struct fb_var_screeninfo *var = &ctrl->fb[id]->var;
 	u32 offset = (var->xres_virtual - var->xres) * var->bits_per_pixel / 8;
 	u32 cfg = 0;
-	u32 shw;
 
 	cfg = S3C_VIDADDR_PAGEWIDTH(var->xres * var->bits_per_pixel / 8);
 	cfg |= S3C_VIDADDR_OFFSIZE(offset);
 
-	if ((pdata->hw_ver == 0x62) || (pdata->hw_ver == 0x70)) {
-		shw = readl(ctrl->regs + S3C_WINSHMAP);
-		shw |= S3C_WINSHMAP_PROTECT(id);
-		writel(shw, ctrl->regs + S3C_WINSHMAP);
-	}
-
 	writel(cfg, ctrl->regs + S3C_VIDADDR_SIZE(id));
-
-	if ((pdata->hw_ver == 0x62) || (pdata->hw_ver == 0x70)) {
-		shw = readl(ctrl->regs + S3C_WINSHMAP);
-		shw &= ~(S3C_WINSHMAP_PROTECT(id));
-		writel(shw, ctrl->regs + S3C_WINSHMAP);
-	}
 
 	return 0;
 }
 
 int s3cfb_set_chroma_key(struct s3cfb_global *ctrl, int id)
 {
-	struct s3c_platform_fb *pdata = to_fb_plat(ctrl->dev);
 	struct s3cfb_window *win = ctrl->fb[id]->par;
 	struct s3cfb_chroma *chroma = &win->chroma;
 	u32 cfg = 0;
-	u32 shw;
 
 	if (id == 0) {
 		dev_err(ctrl->dev, "[fb%d] does not support chroma key\n", id);
@@ -944,22 +901,10 @@ int s3cfb_set_chroma_key(struct s3cfb_global *ctrl, int id)
 	if (chroma->enabled)
 		cfg |= S3C_KEYCON0_KEY_ENABLE;
 
-	if ((pdata->hw_ver == 0x62) || (pdata->hw_ver == 0x70)) {
-		shw = readl(ctrl->regs + S3C_WINSHMAP);
-		shw |= S3C_WINSHMAP_PROTECT(id);
-		writel(shw, ctrl->regs + S3C_WINSHMAP);
-	}
-
 	writel(cfg, ctrl->regs + S3C_KEYCON(id));
 
 	cfg = S3C_KEYCON1_COLVAL(chroma->key);
 	writel(cfg, ctrl->regs + S3C_KEYVAL(id));
-
-	if ((pdata->hw_ver == 0x62) || (pdata->hw_ver == 0x70)) {
-		shw = readl(ctrl->regs + S3C_WINSHMAP);
-		shw &= ~(S3C_WINSHMAP_PROTECT(id));
-		writel(shw, ctrl->regs + S3C_WINSHMAP);
-	}
 
 	dev_dbg(ctrl->dev, "[fb%d] chroma key: 0x%08x, %s\n", id, cfg,
 		chroma->enabled ? "enabled" : "disabled");
