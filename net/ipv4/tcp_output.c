@@ -218,12 +218,6 @@ void tcp_select_initial_window(int __space, __u32 mss,
 		 */
 		space = max_t(u32, sysctl_tcp_rmem[2], sysctl_rmem_max);
 		space = min_t(u32, space, *window_clamp);
-#if defined (CONFIG_TCP4_ATT_PATCH)
-		if (sysctl_tcp_workaround_signed_windows)
-			(*rcv_wnd) = min(space, MAX_TCP_WINDOW);
-		else
-			(*rcv_wnd) = space;
-#endif
 		while (space > 65535 && (*rcv_wscale) < 14) {
 			space >>= 1;
 			(*rcv_wscale)++;
@@ -234,7 +228,6 @@ void tcp_select_initial_window(int __space, __u32 mss,
 	 * following RFC2414. Senders, not following this RFC,
 	 * will be satisfied with 2.
 	 */
-#if !defined (CONFIG_TCP4_ATT_PATCH)
 	if (mss > (1 << *rcv_wscale)) {
 		int init_cwnd = 4;
 		if (mss > 1460 * 3)
@@ -250,7 +243,6 @@ void tcp_select_initial_window(int __space, __u32 mss,
 		else if (*rcv_wnd > init_cwnd * mss)
 			*rcv_wnd = init_cwnd * mss;
 	}
-#endif
 
 	/* Set the clamp no higher than max representable value */
 	(*window_clamp) = min(65535U << (*rcv_wscale), *window_clamp);
